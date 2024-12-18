@@ -1,0 +1,14 @@
+from flask_sqlalchemy import SQLAlchemy
+
+# Creating an object that can interact with the database
+db = SQLAlchemy()
+
+# Defining and creating a table for all users. Plan is for each user to have a username and password
+class Users(db.Model):
+    # Creating all the fields for this entity. Every entity needs an id
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(75), unique=True, nullable=False)
+    password = db.Column(db.String(75), unique=False, nullable=False)
+    
+    def __repr__(self):
+        return f"Username: {self.username}"
