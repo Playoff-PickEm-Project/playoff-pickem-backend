@@ -1,7 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-
-# Creating an object that can interact with the database
-db = SQLAlchemy()
+from app import db
 
 # Defining and creating a table for all users. Plan is for each user to have a username and password
 class Users(db.Model):
