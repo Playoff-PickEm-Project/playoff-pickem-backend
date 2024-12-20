@@ -4,3 +4,4 @@ Flask-SQLAlchemy==3.1.1
 python-dotenv==1.0.1
 Flask-Bcrypt==1.0.1
 psycopg2==2.9.10
+Flask-Cors==5.0.0

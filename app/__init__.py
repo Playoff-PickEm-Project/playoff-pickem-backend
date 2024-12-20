@@ -5,10 +5,11 @@ import os
 from dotenv import load_dotenv
 # from .controllers import usersController
 
+# load .env variables
+load_dotenv()
+
 # For initializing the sqlalchemy object
 db = SQLAlchemy()
-
-load_dotenv()
 
 POSTGRESQL_PASSWORD = os.getenv('POSTGRESQL_PASSWORD')
 

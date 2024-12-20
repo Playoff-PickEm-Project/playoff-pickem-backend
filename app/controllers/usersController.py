@@ -1,5 +1,4 @@
 from flask import Blueprint, request, jsonify
-from app import create_app
 from app.services.usersService import register, login
 
 # Creating a blueprint for user routing purposes
