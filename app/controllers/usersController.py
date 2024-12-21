@@ -4,6 +4,7 @@ from app.services.usersService import register, login
 # Creating a blueprint for user routing purposes
 usersController = Blueprint('usersController', __name__)
 
+# Creates the route to register. Calls the register method from the services file.
 @usersController.route('/register', methods=['POST'])
 def register_user():
     data = request.get_json()
@@ -14,6 +15,7 @@ def register_user():
     
     return jsonify(result)
 
+# Creates the route to login. Calls the register method from the services file.
 @usersController.route('/login', methods=['POST'])
 def login_user():
     data = request.get_json()

@@ -1,4 +1,4 @@
-# run.py or manage.py
+# run.py file to run the flask application. Run with 'python3 run.py'
 
 from app import create_app
 from app.controllers.usersController import usersController
