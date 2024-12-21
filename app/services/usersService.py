@@ -1,3 +1,4 @@
+from flask import abort
 from app.repositories.usersRepository import get_user_by_username
 from app.models.userModel import Users
 from flask_bcrypt import Bcrypt
@@ -12,20 +13,20 @@ def register(username, password):
     
     if (user is None):
         new_user = Users(username=username,
-                         password=bcrypt.generate_password_hash(password))
+                         password=bcrypt.generate_password_hash(password).decode('utf-8'))
         
         db.session.add(new_user)
         db.session.commit()
         return {"message": "Successfully added user."}
     else:
-        return {"error": f"Username {username} already exists."}
+        abort(401, "Username already exists. Register with a different username.")
 
 # Method to login. If credentials match, method should return something (TO BE DECIDED)
 def login(username, password):
     user = get_user_by_username(username=username)
-    
+        
     # Note that order matters for bcrypt.check_password_hash (comparing hashed password to unhashed argument)
     if (user is not None and bcrypt.check_password_hash(user.password, password)):
         return {"message": "Login Successful"}
     else:
-        return {"error": "Login Unsuccessful. Username or Password is incorrect."}
+        abort(401, "Wrong username or password was entered")

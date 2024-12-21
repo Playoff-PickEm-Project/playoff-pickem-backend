@@ -3,12 +3,12 @@ from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 import os
 from dotenv import load_dotenv
-# from .controllers import usersController
+
+# load .env variables
+load_dotenv()
 
 # For initializing the sqlalchemy object
 db = SQLAlchemy()
-
-load_dotenv()
 
 POSTGRESQL_PASSWORD = os.getenv('POSTGRESQL_PASSWORD')
 
@@ -23,8 +23,6 @@ def create_app():
     
     # Initialize the app with SQLAlchemy and Migrate
     db.init_app(app)
-    migrate = Migrate(app, db)
-
-    #app.register_blueprint(usersController)
+    Migrate(app, db)
 
     return app

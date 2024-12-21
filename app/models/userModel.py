@@ -6,7 +6,7 @@ class Users(db.Model):
     # Creating all the fields for this entity. Every entity needs an id
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(75), unique=True, nullable=False)
-    password = db.Column(db.String(75), unique=False, nullable=False)
+    password = db.Column(db.String(128), unique=False, nullable=False)
     
     def __repr__(self):
         return f"Username: {self.username}"
