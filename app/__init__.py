@@ -19,7 +19,10 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Need to import the model before doing db.init in order for the changes to models to be detected
-    from app.models.userModel import Users
+    from app.models.userModel import User
+    from app.models.playerModel import Player
+    from app.models.leagueModel import League
+    # from app.models.allModels import User, League, Player
     
     # Initialize the app with SQLAlchemy and Migrate
     db.init_app(app)

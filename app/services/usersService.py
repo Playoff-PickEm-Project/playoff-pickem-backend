@@ -1,6 +1,6 @@
 from flask import abort
 from app.repositories.usersRepository import get_user_by_username
-from app.models.userModel import Users
+from app.models.userModel import User
 from flask_bcrypt import Bcrypt
 from app import db
 
@@ -12,7 +12,7 @@ def register(username, password):
     user = get_user_by_username(username=username)
     
     if (user is None):
-        new_user = Users(username=username,
+        new_user = User(username=username,
                          password=bcrypt.generate_password_hash(password).decode('utf-8'))
         
         db.session.add(new_user)
