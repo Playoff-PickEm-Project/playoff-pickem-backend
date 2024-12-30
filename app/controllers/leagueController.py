@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from app.services.leagueService import create_league
+from app.services.leagueService import create_league, get_all_user_leagues
 
 leagueController = Blueprint('leagueController', __name__)
 
@@ -11,5 +11,13 @@ def createLeague():
     playerName = data.get('playerName')
     
     result = create_league(leaguename, username, playerName)
+    
+    return jsonify(result)
+
+@leagueController.route('/get_users_leagues', methods=['GET'])
+def getUserLeagues():
+    username = request.args.get('username')
+    
+    result = get_all_user_leagues(username)
     
     return jsonify(result)

@@ -1,7 +1,7 @@
 from flask import abort
 from app import db
 from app.models.leagueModel import League
-from app.repositories.leagueRepository import get_all_leagues, get_league_by_name
+from app.repositories.leagueRepository import get_all_leagues, get_league_by_name, get_leagues_by_username
 from app.services.playerService import create_player
 import secrets
 import string
@@ -46,3 +46,7 @@ def create_league(leagueName, username, playerName):
     except Exception as error:
         print(f"Error: {error}")
         abort(401, "Error creating league. Please try again.")
+        
+def get_all_user_leagues(username):
+    leagues = get_leagues_by_username(username)
+    return [league.to_dict() for league in leagues]
