@@ -24,4 +24,18 @@ class League(db.Model):
     # Leaderboard - one-to-many relationship?
     # player_standings = db.relationship("Player", back_populates='league_standing')
     
+    def __repr__(self):
+        return f"<League(id={self.id}, league_name={self.league_name}, join_code={self.join_code}, commissioner_id={self.commissioner_id})>"
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'league_name': self.league_name,
+            'join_code': self.join_code,
+            'commissioner_id': self.commissioner_id,
+            'commissioner': self.commissioner.to_dict() if self.commissioner else None,  # Assuming the Player class has a to_dict method
+            'league_players': [player.to_dict() for player in self.league_players],  # Assuming Player class also has a to_dict method
+        }
+
+    
     

@@ -19,3 +19,13 @@ class Player(db.Model):
     # The user that the player belongs to.
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', foreign_keys=[user_id], back_populates='user_players')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'league_id': self.league_id,
+            'user_id': self.user_id,
+            #'league': self.league.to_dict() if self.league else None,  # Include league details if exists
+            #'user': self.user.to_dict() if self.user else None   # Include user details if exists
+        }
