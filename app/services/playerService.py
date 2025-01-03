@@ -5,6 +5,7 @@ from app.repositories.leagueRepository import get_league_by_name
 from app.repositories.usersRepository import get_user_by_username
 from app import db
 
+# Method to create a player in the database, and set its fields corresponding to the league it is in.
 def create_player(playerName, username, leaguename):
     league = get_league_by_name(leaguename)
     
