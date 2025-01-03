@@ -26,6 +26,7 @@ def create_player(playerName, username, leaguename):
     )
     
     new_player.league_id = league.id
+    new_player.league = league
     
     return new_player
     

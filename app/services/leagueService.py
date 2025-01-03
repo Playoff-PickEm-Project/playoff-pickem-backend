@@ -1,7 +1,7 @@
 from flask import abort
 from app import db
 from app.models.leagueModel import League
-from app.repositories.leagueRepository import get_all_leagues, get_league_by_name, get_leagues_by_username
+from app.repositories.leagueRepository import get_all_leagues, get_league_by_name, get_leagues_by_username, get_league_by_join_code
 from app.services.playerService import create_player
 import secrets
 import string
@@ -49,4 +49,23 @@ def create_league(leagueName, username, playerName):
         
 def get_all_user_leagues(username):
     leagues = get_leagues_by_username(username)
+    print(leagues)
     return [league.to_dict() for league in leagues]
+
+def join_league(joinCode, username, playerName):
+    league = get_league_by_join_code(joinCode)
+    
+    if (league is None):
+        abort(401, "League not found")
+    
+    leagueName = league.league_name
+    
+    try:
+        new_player = create_player(playerName, username, leagueName)
+        
+        league.league_players.append(new_player)
+        db.session.add(new_player)
+        db.session.commit()
+        return {"message": "Successfully joined league."}
+    except Exception as error:
+        print(f"Error: {error}")

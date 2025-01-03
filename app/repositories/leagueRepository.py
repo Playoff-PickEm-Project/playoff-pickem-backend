@@ -16,7 +16,7 @@ def get_leagues_by_username(username):
         return None
     
     players = user.user_players
-    
+        
     leagues = set()
     
     for player in players:
@@ -24,3 +24,6 @@ def get_leagues_by_username(username):
             leagues.add(player.league)
             
     return list(leagues)
+
+def get_league_by_join_code(joinCode):
+    return League.query.filter_by(join_code=joinCode).first()
