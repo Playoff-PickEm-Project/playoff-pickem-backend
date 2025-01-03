@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from app.services.leagueService import create_league, get_all_user_leagues
+from app.services.leagueService import create_league, get_all_user_leagues, join_league
 
 leagueController = Blueprint('leagueController', __name__)
 
@@ -19,5 +19,16 @@ def getUserLeagues():
     username = request.args.get('username')
     
     result = get_all_user_leagues(username)
+    
+    return jsonify(result)
+
+@leagueController.route('/join_league', methods=['POST'])
+def joinLeague():
+    data = request.get_json()
+    joinCode = data.get('joinCode')
+    username = data.get('username')
+    playerName = data.get('playerName')
+    
+    result = join_league(joinCode, username, playerName)
     
     return jsonify(result)
