@@ -12,6 +12,7 @@ def generate_join_code(length=30):
     characters = string.ascii_letters + string.digits
     return ''.join(secrets.choice(characters) for _ in range(length))
 
+# Method to create a league. Makes sure to also add the first player to the league.
 def create_league(leagueName, username, playerName):
     league = get_league_by_name(leagueName)
     
@@ -47,11 +48,13 @@ def create_league(leagueName, username, playerName):
         print(f"Error: {error}")
         abort(401, "Error creating league. Please try again.")
         
+# Method to get all of the leagues that a user belongs to.
 def get_all_user_leagues(username):
     leagues = get_leagues_by_username(username)
     print(leagues)
     return [league.to_dict() for league in leagues]
 
+# Method to allow for a user to join a league.
 def join_league(joinCode, username, playerName):
     league = get_league_by_join_code(joinCode)
     
@@ -69,3 +72,11 @@ def join_league(joinCode, username, playerName):
         return {"message": "Successfully joined league."}
     except Exception as error:
         print(f"Error: {error}")
+     
+# Method to remove a player from a league.   
+def delete_player(leagueName, playerName):
+    pass
+
+# Method to delete a league. Removes all players initially, and then deletes the league.
+def delete_league(leagueName):
+    pass
