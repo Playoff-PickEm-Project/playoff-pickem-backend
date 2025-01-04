@@ -23,11 +23,22 @@ def create_player(playerName, username, leaguename):
             
     new_player = Player(
         name = playerName,
-        user_id = user.id
+        user_id = user.id,
+        points = 0,
     )
     
     new_player.league_id = league.id
     new_player.league = league
     
+    
     return new_player
+
+def get_player_standings(leagueName):
+    league = get_league_by_name(leagueName)
+    
+    league.league_players.sort(key=lambda x: x.points)
+    
+    return league.to_dict()
+    
+    
     

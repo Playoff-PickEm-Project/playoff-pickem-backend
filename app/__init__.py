@@ -22,6 +22,7 @@ def create_app():
     from app.models.userModel import User
     from app.models.playerModel import Player
     from app.models.leagueModel import League
+    from app.models.gameModel import Game
     # from app.models.allModels import User, League, Player
     
     # Initialize the app with SQLAlchemy and Migrate

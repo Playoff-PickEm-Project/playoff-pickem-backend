@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from app import db
+from app.models.gameModel import Game
 from app.models.playerModel import Player
 
 # Model for the league entity
@@ -15,14 +16,13 @@ class League(db.Model):
     
     # Has a user that is the commissioner of the league (note the one-to-one relationship)
     commissioner_id = db.Column(db.Integer, db.ForeignKey('player.id'))
-    commissioner = db.relationship('Player', foreign_keys=[commissioner_id], back_populates='league_commissioner')
+    commissioner = db.relationship('Player', foreign_keys=[commissioner_id])
     
     # All of the players in the league. Note the one-to-many relationship (a league can have multiple players, 
     # but a player is unique for each league).
-    league_players = db.relationship('Player', foreign_keys=[Player.league_id], back_populates='league')
+    league_players = db.relationship('Player', foreign_keys=[Player.league_id])
     
-    # Leaderboard - one-to-many relationship?
-    # player_standings = db.relationship("Player", back_populates='league_standing')
+    league_games = db.relationship('Game', foreign_keys=[Game.league_id])
     
     def __repr__(self):
         return f"<League(id={self.id}, league_name={self.league_name}, join_code={self.join_code}, commissioner_id={self.commissioner_id})>"
@@ -36,6 +36,3 @@ class League(db.Model):
             'commissioner': self.commissioner.to_dict() if self.commissioner else None,  # Assuming the Player class has a to_dict method
             'league_players': [player.to_dict() for player in self.league_players],  # Assuming Player class also has a to_dict method
         }
-
-    
-    

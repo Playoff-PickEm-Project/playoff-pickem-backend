@@ -2,6 +2,7 @@ from flask import abort
 from app import db
 from app.models.leagueModel import League
 from app.repositories.leagueRepository import get_all_leagues, get_league_by_name, get_leagues_by_username, get_league_by_join_code
+from app.repositories.playerRepository import get_player_by_username_and_leaguename, get_player_by_playername_and_leaguename
 from app.services.playerService import create_player
 import secrets
 import string
@@ -51,7 +52,6 @@ def create_league(leagueName, username, playerName):
 # Method to get all of the leagues that a user belongs to.
 def get_all_user_leagues(username):
     leagues = get_leagues_by_username(username)
-    print(leagues)
     return [league.to_dict() for league in leagues]
 
 # Method to allow for a user to join a league.
@@ -74,9 +74,46 @@ def join_league(joinCode, username, playerName):
         print(f"Error: {error}")
      
 # Method to remove a player from a league.   
-def delete_player(leagueName, playerName):
-    pass
+def delete_player(playerName, leagueName):
+    print("reached player delete")
+    league = get_league_by_name(leagueName)
+    player = get_player_by_playername_and_leaguename(playerName, leagueName)
+    
+    if (league is None):
+        abort(401, "League not found")
+            
+    if (player is None):
+        abort(401, "Player not found")
+    
+    user = player.user
+    
+    if (user is None):
+        abort(401, "User not found")
+    
+    if (league.commissioner is player):
+        league.commissioner = None
+        league.commissioner_id = None
+            
+    league.league_players.remove(player)
+    
+    #user.user_players.remove(player)
+    
+    db.session.delete(player)
+    db.session.commit()
+    
+    return {"message": "Player deleted successfully."}
 
 # Method to delete a league. Removes all players initially, and then deletes the league.
 def delete_league(leagueName):
-    pass
+    league = get_league_by_name(leagueName)
+    
+    if (league is None):
+        abort(401, "League not found.")
+    
+    for player in league.league_players:
+        delete_player(player.name, leagueName)
+    
+    db.session.delete(league)
+    db.session.commit()
+    
+    return {"message": "League deleted successfully."}
