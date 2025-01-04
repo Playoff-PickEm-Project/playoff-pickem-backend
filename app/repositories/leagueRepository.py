@@ -1,6 +1,9 @@
 from app.models.leagueModel import League
 from app.repositories.usersRepository import get_user_by_username
 
+def get_league_by_id(id):
+    return League.query.get(id)
+
 def get_all_leagues():
     return League.query.all()
 
@@ -20,8 +23,9 @@ def get_leagues_by_username(username):
     leagues = set()
     
     for player in players:
-        if (player.league):
-            leagues.add(player.league)
+        l = get_league_by_id(player.league_id)
+        if (l):
+            leagues.add(l)
             
     return list(leagues)
 

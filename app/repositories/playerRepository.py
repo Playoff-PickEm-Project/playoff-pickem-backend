@@ -18,3 +18,11 @@ def get_player_by_username_and_leaguename(username, leagueName):
         return None
     
     return Player.query.filter(Player.user_id == user.id, Player.league_id == league.id).first()
+
+def get_player_by_playername_and_leaguename(playerName, leagueName):
+    league = get_league_by_name(leagueName)
+    for player in league.league_players:
+        if player.name == playerName:
+            return player
+    
+    return None

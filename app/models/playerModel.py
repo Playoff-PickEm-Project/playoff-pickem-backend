@@ -7,18 +7,21 @@ class Player(db.Model):
     name = db.Column(db.String(75), unique=False, nullable=False)
     
     # A player may be the commissioner of the league.
-    league_commissioner = db.relationship('League', uselist=False, back_populates='commissioner', foreign_keys='League.commissioner_id')
+    #league_commissioner = db.relationship('League', uselist=False, back_populates='commissioner', foreign_keys='League.commissioner_id')
     
     # Standings (many side)
     league_id = db.Column(db.Integer, db.ForeignKey('league.id'))
     # league_standing = db.relationship('League', foreign_keys=[league_id], back_populates='player_standings')
     
     # The league that the player belongs to.
-    league = db.relationship('League', foreign_keys=[league_id], back_populates='league_players')
+    #league = db.relationship('League', foreign_keys=[league_id], back_populates='league_players')
     
     # The user that the player belongs to.
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', foreign_keys=[user_id], back_populates='user_players')
+    
+    # In order to calculate the number of points a player has.
+    points = db.Column(db.Integer)
     
     def to_dict(self):
         return {
@@ -26,6 +29,7 @@ class Player(db.Model):
             'name': self.name,
             'league_id': self.league_id,
             'user_id': self.user_id,
+            'points': self.points,
             #'league': self.league.to_dict() if self.league else None,  # Include league details if exists
             #'user': self.user.to_dict() if self.user else None   # Include user details if exists
         }
