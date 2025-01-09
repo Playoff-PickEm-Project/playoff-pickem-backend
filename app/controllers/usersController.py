@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.services.usersService import register, login
+from app.repositories.usersRepository import get_user_by_username
 
 # Creating a blueprint for user routing purposes
 usersController = Blueprint('usersController', __name__)
@@ -27,6 +28,10 @@ def login_user():
     
     return jsonify(result)
 
-@usersController.route('/some-endpoint', methods=['GET', 'POST'])
-def some_function():
-    return 'Hello, World!'
+@usersController.route('/get_user_by_username', methods=['GET'])
+def getUserByUsername():
+    username = request.args.get('username')
+    
+    result = get_user_by_username(username)
+    
+    return jsonify(result.to_dict())

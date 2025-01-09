@@ -201,6 +201,7 @@ def grade_game(game_id):
             player = get_player_by_id(answer.player_id)
             print(answer.answer)
             
+            # IDK WHY LOWERCASE BUT KEEP AN EYE ON
             if answer.answer == prop.correct_answer:
                 if answer.answer == "over":
                     player.points += prop.over_points
