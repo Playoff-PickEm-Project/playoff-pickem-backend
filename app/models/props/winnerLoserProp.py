@@ -10,6 +10,9 @@ class WinnerLoserProp(db.Model):
     
     question = db.Column(db.String(200))
     
+    favorite_team = db.Column(db.String(100))
+    underdog_team = db.Column(db.String(100))
+    
     favorite_points = db.Column(db.Integer)
     underdog_points = db.Column(db.Integer)
     
@@ -18,10 +21,12 @@ class WinnerLoserProp(db.Model):
     
     def to_dict(self):
         return {
-            'id': self.id,
+            'prop_id': self.id,
             'game_id': self.game_id,
             'question': self.question,
             'favorite_points': self.favorite_points,
             'underdog_points': self.underdog_points,
-            'correct_answer': self.correct_answer
+            'favorite_team': self.favorite_team,
+            'underdog_team': self.underdog_team,
+            'correct_answer': self.correct_answer,
         }

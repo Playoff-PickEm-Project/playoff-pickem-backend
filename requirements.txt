@@ -5,3 +5,4 @@ python-dotenv==1.0.1
 Flask-Bcrypt==1.0.1
 psycopg2==2.9.10
 Flask-Cors==5.0.0
+pytz==2024.2

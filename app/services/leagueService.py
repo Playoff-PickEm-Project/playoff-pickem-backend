@@ -3,6 +3,7 @@ from app import db
 from app.models.leagueModel import League
 from app.repositories.leagueRepository import get_all_leagues, get_league_by_name, get_leagues_by_username, get_league_by_join_code
 from app.repositories.playerRepository import get_player_by_username_and_leaguename, get_player_by_playername_and_leaguename
+from app.repositories.gameRepository import get_game_by_id
 from app.services.playerService import create_player
 import secrets
 import string
@@ -103,6 +104,21 @@ def delete_player(playerName, leagueName):
     
     return {"message": "Player deleted successfully."}
 
+def delete_game(leagueName, game_id):
+    league = get_league_by_name(leagueName)
+    game = get_game_by_id(game_id)
+    
+    for winnerLoserProp in game.winner_loser_props:
+        db.session.delete(winnerLoserProp)
+        db.session.commit()
+        
+    for overUnderProp in game.over_under_props:
+        db.session.delete(overUnderProp)
+        db.session.commit()
+    
+    db.session.delete(game)
+    db.session.commit()
+
 # Method to delete a league. Removes all players initially, and then deletes the league.
 def delete_league(leagueName):
     league = get_league_by_name(leagueName)
@@ -112,6 +128,9 @@ def delete_league(leagueName):
     
     for player in league.league_players:
         delete_player(player.name, leagueName)
+    
+    for game in league.league_games:
+        delete_game(leagueName, game.id)
     
     db.session.delete(league)
     db.session.commit()

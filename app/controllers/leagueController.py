@@ -62,9 +62,6 @@ def createGame():
     winnerLoserQuestions = data.get('winnerLoserQuestions')
     overUnderQuestions = data.get('overUnderQuestions')
     
-    print(winnerLoserQuestions)
-    print("----------------------------------------------------------------------------------------------------------------------------------")
-    
     result = create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions)
     
     return jsonify(result)

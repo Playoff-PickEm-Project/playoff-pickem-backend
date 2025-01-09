@@ -16,7 +16,7 @@ class OverUnderProp(db.Model):
     
     def to_dict(self):
         return {
-            'id': self.id,
+            'prop_id': self.id,
             'game_id': self.game_id,
             'question': self.question,
             'over_points': self.over_points,
