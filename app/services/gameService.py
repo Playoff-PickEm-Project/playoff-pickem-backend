@@ -7,7 +7,8 @@ from app.models.propAnswers.winnerLoserAnswer import WinnerLoserAnswer
 from app.models.propAnswers.overUnderAnswer import OverUnderAnswer
 from app.repositories.leagueRepository import get_league_by_name
 from app.repositories.gameRepository import get_game_by_id
-from app.repositories.playerRepository import get_player_by_username_and_leaguename
+from app.repositories.playerRepository import get_player_by_username_and_leaguename, get_player_by_id
+from app.repositories.propRepository import get_winner_loser_prop_by_id, get_over_under_prop_by_id, get_over_under_answers_for_prop, get_winner_loser_answers_for_prop
 
 # Method to save answers for a game (overall)
 def answer_game(leagueName, username, game_id, answer):
@@ -31,37 +32,58 @@ def answer_winner_loser_prop(leagueName, username, prop_id, answer):
     if player is None:
         abort(401, "Player not found")
     
-    new_answer = WinnerLoserAnswer(
-        answer = answer,
-        prop_id = prop_id,
-        player_id = player.id
-    )
+    # Check if the player has already answered this prop_id
+    existing_answer = WinnerLoserAnswer.query.filter_by(prop_id=prop_id, player_id=player.id).first()
     
-    db.session.add(new_answer)
-    db.session.commit()
-    
-    player.player_winner_loser_answers.append(new_answer)
-    db.session.commit()
-    
-    return {"Message": "Winner/Loser prop successfully answered."}
+    if existing_answer:
+        # If the player has already answered, update the existing answer
+        existing_answer.answer = answer
+        db.session.commit()
+        return {"Message": "Winner/Loser prop answer updated successfully."}
+    else:
+        # If the player hasn't answered yet, create a new answer
+        new_answer = WinnerLoserAnswer(
+            answer=answer,
+            prop_id=prop_id,
+            player_id=player.id
+        )
+        db.session.add(new_answer)
+        db.session.commit()
 
-# Method to allow for a player to save their answers for a specific game. (Over/Under Prop)
+        player.player_winner_loser_answers.append(new_answer)
+        db.session.commit()
+
+        return {"Message": "Winner/Loser prop successfully answered."}
+
 def answer_over_under_prop(leagueName, username, prop_id, answer):
     player = get_player_by_username_and_leaguename(username, leagueName)
     
-    new_answer = OverUnderAnswer(
-        answer = answer,
-        prop_id = prop_id,
-        player_id = player.id
-    )
+    if player is None:
+        abort(401, "Player not found")
     
-    db.session.add(new_answer)
-    db.session.commit()
+    # Check if the player has already answered this prop_id
+    existing_answer = OverUnderAnswer.query.filter_by(prop_id=prop_id, player_id=player.id).first()
     
-    player.player_over_under_answers.append(new_answer)
-    db.session.commit()
-    
-    return {"Message": "Winner/Loser prop successfully answered."}
+    if existing_answer:
+        # If the player has already answered, update the existing answer
+        existing_answer.answer = answer
+        db.session.commit()
+        return {"Message": "Over/Under prop answer updated successfully."}
+    else:
+        # If the player hasn't answered yet, create a new answer
+        new_answer = OverUnderAnswer(
+            answer=answer,
+            prop_id=prop_id,
+            player_id=player.id
+        )
+        db.session.add(new_answer)
+        db.session.commit()
+
+        player.player_over_under_answers.append(new_answer)
+        db.session.commit()
+
+        return {"Message": "Over/Under prop successfully answered."}
+
 
 
 # This method is to create a game within a league.
@@ -145,3 +167,65 @@ def view_games_in_league(leagueName):
     league = get_league_by_name(leagueName)
     
     return [game.to_dict() for game in league.league_games]
+
+def grade_game(game_id):
+    game = get_game_by_id(game_id)
+        
+    if (game is None):
+        abort(401, "Game not found.")
+    
+    # Iterate through the winner_loser_props of the game
+    for prop in game.winner_loser_props:
+        # Get all the answers for the current prop (for all players)
+        answers = get_winner_loser_answers_for_prop(prop.id)
+        
+        # Iterate through each answer to grade it
+        for answer in answers:
+            player = get_player_by_id(answer.player_id)  # Get the player who submitted the answer
+            
+            # Check if the player's answer matches the correct answer
+            if answer.answer == prop.correct_answer:
+                # If the answer is correct, assign the appropriate points
+                if answer.answer == prop.favorite_team:
+                    player.points += prop.favorite_points  # Add favorite points
+                elif answer.answer == prop.underdog_team:
+                    player.points += prop.underdog_points  # Add underdog points
+                
+                # You can log or store any additional data related to grading if needed
+                # For example, you might want to create/update an entry in another table
+                
+    for prop in game.over_under_props:
+        answers = get_over_under_answers_for_prop(prop.id)
+        
+        for answer in answers:
+            player = get_player_by_id(answer.player_id)
+            print(answer.answer)
+            
+            if answer.answer == prop.correct_answer:
+                if answer.answer == "over":
+                    player.points += prop.over_points
+                elif answer.answer == "under":
+                    player.points += prop.under_points
+                    
+    game.graded = 1
+    
+    db.session.commit()
+    
+def set_correct_winner_loser_prop(leaguename, prop_id, answer):
+    prop = get_winner_loser_prop_by_id(prop_id)
+
+    if (prop is None):
+        abort(401, "Prop not found")
+    
+    prop.correct_answer = answer
+    db.session.commit()
+
+
+def set_correct_over_under_prop(leaguename, prop_id, answer):
+    prop = get_over_under_prop_by_id(prop_id)
+
+    if (prop is None):
+        abort(401, "Prop not found")
+
+    prop.correct_answer = answer
+    db.session.commit()
