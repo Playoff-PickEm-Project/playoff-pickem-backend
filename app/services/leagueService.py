@@ -1,6 +1,8 @@
 from flask import abort
 from app import db
 from app.models.leagueModel import League
+from app.models.propAnswers.overUnderAnswer import OverUnderAnswer
+from app.models.propAnswers.winnerLoserAnswer import WinnerLoserAnswer
 from app.repositories.leagueRepository import get_all_leagues, get_league_by_name, get_leagues_by_username, get_league_by_join_code
 from app.repositories.playerRepository import get_player_by_username_and_leaguename, get_player_by_playername_and_leaguename
 from app.repositories.gameRepository import get_game_by_id
@@ -108,16 +110,37 @@ def delete_game(leagueName, game_id):
     league = get_league_by_name(leagueName)
     game = get_game_by_id(game_id)
     
+    if game is None:
+        abort(401, "Game not found.")
+    
+    # First, remove all the answers associated with the winner/loser props
     for winnerLoserProp in game.winner_loser_props:
+        # Delete all answers associated with this prop
+        winnerLoserAnswers = WinnerLoserAnswer.query.filter_by(prop_id=winnerLoserProp.id).all()
+        for answer in winnerLoserAnswers:
+            db.session.delete(answer)
+            db.session.commit()
+        
+        # Delete the winnerLoserProp after removing the answers
         db.session.delete(winnerLoserProp)
         db.session.commit()
-        
+
+    # Then, remove all the answers associated with the over/under props
     for overUnderProp in game.over_under_props:
+        # Delete all answers associated with this prop
+        overUnderAnswers = OverUnderAnswer.query.filter_by(prop_id=overUnderProp.id).all()
+        for answer in overUnderAnswers:
+            db.session.delete(answer)
+            db.session.commit()
+
+        # Delete the overUnderProp after removing the answers
         db.session.delete(overUnderProp)
         db.session.commit()
     
+    # Finally, delete the game
     db.session.delete(game)
     db.session.commit()
+
 
 # Method to delete a league. Removes all players initially, and then deletes the league.
 def delete_league(leagueName):

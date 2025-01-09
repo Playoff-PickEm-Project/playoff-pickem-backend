@@ -17,7 +17,11 @@ class Game(db.Model):
     
     # Each league has an array of all the types of prop questions. For now, will only support winner/loser and over/under.
     winner_loser_props = db.relationship('WinnerLoserProp', foreign_keys=[WinnerLoserProp.game_id])
-    over_under_props = db.relationship('OverUnderProp', foreign_keys=[OverUnderProp.game_id])    
+    over_under_props = db.relationship('OverUnderProp', foreign_keys=[OverUnderProp.game_id])
+    
+    # Field to check if the game is graded or not. 0 represents not graded, non-zero represents graded.
+    graded = db.Column(db.Integer)
+    
     
     def to_dict(self):
         return {
