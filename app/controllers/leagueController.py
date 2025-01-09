@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from app.services.leagueService import create_league, get_all_user_leagues, join_league, delete_league
 from app.services.playerService import get_player_standings
 from app.services.gameService import create_game, view_games_in_league
+from app.repositories.leagueRepository import get_league_by_name
 
 leagueController = Blueprint('leagueController', __name__)
 
@@ -73,3 +74,14 @@ def viewGamesInLeague():
     result = view_games_in_league(leaguename)
     
     return jsonify(result)
+
+@leagueController.route('/get_league_by_name', methods=['GET'])
+def getLeagueByName():
+    leaguename = request.args.get('leagueName')
+    
+    result = get_league_by_name(leaguename)
+    
+    if result is None:
+        return {"Message": "idk"}
+    
+    return jsonify(result.to_dict())
