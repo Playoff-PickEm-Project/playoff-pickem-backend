@@ -12,8 +12,11 @@ app = create_app()  # Initialize the app
 CORS(app, origins="http://localhost:3000")
 
 @app.after_request
-def add_headers(response):
-    response.headers['Cache-Control'] = 'no-store'
+def add_cache_headers(response):
+    # This will ensure no caching
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
     return response
 
 # Register blueprints and other configurations

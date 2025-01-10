@@ -8,8 +8,8 @@ class OverUnderProp(db.Model):
     
     question = db.Column(db.String(200))
     
-    over_points = db.Column(db.Integer)
-    under_points = db.Column(db.Integer)
+    over_points = db.Column(db.Numeric)
+    under_points = db.Column(db.Numeric)
     
     # String format for correct answer. Either "Over" or "Under"
     correct_answer = db.Column(db.String(10))
