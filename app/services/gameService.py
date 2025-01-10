@@ -212,28 +212,68 @@ def grade_game(game_id):
     
     db.session.commit()
     
-def set_correct_winner_loser_prop(leaguename, prop_id, answer):
+def set_correct_winner_loser_prop(leaguename, prop_id, ans):        
     prop = get_winner_loser_prop_by_id(prop_id)
+    
+    game = Game.query.filter_by(id=prop.game_id).first()
+    if (game is None):
+        abort(401, "Game not found")
+    
+    
+    if game.graded != 0:
+        for prop in game.winner_loser_props:
+            # Get all the answers for the current prop (for all players)
+            answers = get_winner_loser_answers_for_prop(prop.id)
+            
+            # Iterate through each answer to grade it
+            for answer in answers:
+                player = get_player_by_id(answer.player_id)  # Get the player who submitted the answer
+                
+                # Check if the player's answer matches the correct answer
+                if answer.answer == prop.correct_answer:
+                    # If the answer is correct, assign the appropriate points
+                    if answer.answer == prop.favorite_team:
+                        player.points -= prop.favorite_points  # Add favorite points
+                    elif answer.answer == prop.underdog_team:
+                        player.points -= prop.underdog_points
 
     if (prop is None):
         abort(401, "Prop not found")
     
-    prop.correct_answer = answer
+    prop.correct_answer = ans
     db.session.commit()
 
 
-def set_correct_over_under_prop(leaguename, prop_id, answer):
+def set_correct_over_under_prop(leaguename, prop_id, ans):
     prop = get_over_under_prop_by_id(prop_id)
+    
+    game = Game.query.filter_by(id=prop.game_id).first()
+    print(game.graded)
+    if game.graded != 0:
+        for prop in game.over_under_props:
+            answers = get_over_under_answers_for_prop(prop.id)
+            
+            for answer in answers:
+                player = get_player_by_id(answer.player_id)
+                print(answer.answer)
+                
+                # IDK WHY LOWERCASE BUT KEEP AN EYE ON
+                if answer.answer == prop.correct_answer:
+                    if answer.answer == "over":
+                        player.points -= prop.over_points
+                    elif answer.answer == "under":
+                        player.points -= prop.under_points
 
     if (prop is None):
         abort(401, "Prop not found")
 
-    prop.correct_answer = answer
+    print(answer.answer)
+    prop.correct_answer = ans
     db.session.commit()
     
 def get_games_from_league(leaguename):
     league = get_league_by_name(leaguename)
-    
+
     if league is None:
         abort(401, "League not found")
         
