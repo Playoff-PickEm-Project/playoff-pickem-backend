@@ -11,6 +11,11 @@ app = create_app()  # Initialize the app
 
 CORS(app, origins="http://localhost:3000")
 
+@app.after_request
+def add_headers(response):
+    response.headers['Cache-Control'] = 'no-store'
+    return response
+
 # Register blueprints and other configurations
 app.register_blueprint(usersController)
 app.register_blueprint(leagueController)
