@@ -1,5 +1,5 @@
 from flask import jsonify, request, Blueprint
-from app.services.propService import retrieve_over_under_answers, retrieve_winner_loser_answers
+from app.services.propService import retrieve_over_under_answers, retrieve_winner_loser_answers, get_saved_correct_answers
 from app.services.gameService import set_correct_winner_loser_prop, set_correct_over_under_prop
 
 propController = Blueprint("propController", __name__)
@@ -45,5 +45,13 @@ def setCorrectOverUnderProp():
     answer = data.get('answer')
     
     result = set_correct_over_under_prop(leaguename, prop_id, answer)
+    
+    return jsonify(result)
+
+@propController.route("/get_correct_prop_answers", methods=['GET'])
+def getCorrectPropAnswers():
+    game_id = request.args.get('game_id')
+    
+    result = get_saved_correct_answers(game_id)
     
     return jsonify(result)
