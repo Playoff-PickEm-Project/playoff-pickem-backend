@@ -62,7 +62,7 @@ def gradeGame():
 
 @gameController.route('/get_games_in_league', methods=['GET'])
 def getGamesFromLeague():
-    leaguename = request.args.get('leaguename')
+    leaguename = request.args.get('leagueName')
     
     result = get_games_from_league(leaguename)
     

@@ -35,9 +35,7 @@ def create_player(playerName, username, leaguename):
 
 def get_player_standings(leagueName):
     league = get_league_by_name(leagueName)
-    
-    league.league_players.sort(key=lambda x: x.points)
-    
+        
     return league.to_dict()
     
     
