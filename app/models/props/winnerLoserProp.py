@@ -13,8 +13,8 @@ class WinnerLoserProp(db.Model):
     favorite_team = db.Column(db.String(100))
     underdog_team = db.Column(db.String(100))
     
-    favorite_points = db.Column(db.Integer)
-    underdog_points = db.Column(db.Integer)
+    favorite_points = db.Column(db.Numeric)
+    underdog_points = db.Column(db.Numeric)
     
     # String format for correct answer. Either "Winner" or "Loser"
     correct_answer = db.Column(db.String(20))

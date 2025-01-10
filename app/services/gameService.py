@@ -230,3 +230,11 @@ def set_correct_over_under_prop(leaguename, prop_id, answer):
 
     prop.correct_answer = answer
     db.session.commit()
+    
+def get_games_from_league(leaguename):
+    league = get_league_by_name(leaguename)
+    
+    if league is None:
+        abort(401, "League not found")
+        
+    return [game.to_dict() for game in league.league_games]
