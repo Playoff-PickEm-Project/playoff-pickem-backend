@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from app.services.leagueService import create_league, get_all_user_leagues, join_league, delete_league
+from app.services.leagueService import create_league, get_all_user_leagues, join_league, delete_league, delete_player
 from app.services.playerService import get_player_standings
 from app.services.gameService import create_game, view_games_in_league
 from app.repositories.leagueRepository import get_league_by_name
@@ -35,6 +35,17 @@ def joinLeague():
     result = join_league(joinCode, username, playerName)
     
     return jsonify(result)
+
+@leagueController.route('/delete_player', methods=['POST'])
+def deletePlayer():
+    data = request.get_json()
+    
+    leaguename = data.get('leaguename')
+    playerName = data.get('playerName')
+    
+    result = delete_player(playerName, leaguename)
+    
+    return {"Message": "Player deleted successfully."}
 
 @leagueController.route('/delete_league', methods=['POST'])
 def deleteLeague():
