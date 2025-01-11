@@ -9,7 +9,7 @@ from flask_cors import CORS
 
 app = create_app()  # Initialize the app
 
-CORS(app, origins="http://localhost:3000")
+CORS(app, resources={r"/*": {"origins": "https://playoff-pickem-frontend-q31n.onrender.com"}})
 
 @app.after_request
 def add_cache_headers(response):
