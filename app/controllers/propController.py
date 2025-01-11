@@ -1,5 +1,5 @@
 from flask import jsonify, request, Blueprint
-from app.services.propService import retrieve_over_under_answers, retrieve_winner_loser_answers, get_saved_correct_answers
+from app.services.propService import retrieve_over_under_answers, retrieve_winner_loser_answers, get_saved_correct_answers, edit_over_under_prop, edit_winner_loser_prop, correct_over_under_prop, correct_winner_loser_prop
 from app.services.gameService import set_correct_winner_loser_prop, set_correct_over_under_prop
 
 propController = Blueprint("propController", __name__)
@@ -54,4 +54,50 @@ def getCorrectPropAnswers():
     
     result = get_saved_correct_answers(game_id)
     
+    return jsonify(result)
+
+@propController.route("/update_winner_loser_prop", methods=['POST'])
+def updateWinnerLoserProp():
+    data = request.get_json()
+    
+    #prop_id, question, favoritePoints, underdogPoints
+    prop_id = data.get('prop_id')
+    question = data.get('question')
+    favoritePoints = data.get('favorite_points')
+    underdogPoints = data.get('underdog_points')
+    
+    edit_winner_loser_prop(prop_id, question, favoritePoints, underdogPoints)
+    
+    return {"Message": "Successfully edited prop."}
+
+@propController.route("/update_over_under_prop", methods=['POST'])
+def updateOverUnderProp():
+    data = request.get_json()
+    
+    #prop_id, question, favoritePoints, underdogPoints
+    prop_id = data.get('prop_id')
+    question = data.get('question')
+    overPoints = data.get('over_points')
+    underPoints = data.get('under_points')
+    
+    edit_over_under_prop(prop_id, question, overPoints, underPoints)
+    
+    return {"Message": "Successfully edited prop."}
+
+@propController.route("/correct_winner_loser_prop", methods=['POST'])
+def correctWinnerLoserProp():
+    data = request.get_json()
+    prop_id = data.get('prop_id')
+    answer = data.get('answer')
+    
+    result = correct_winner_loser_prop(prop_id, answer)
+    return jsonify(result)
+
+@propController.route("/correct_over_under_prop", methods=['POST'])
+def correctOverUnderProp():
+    data = request.get_json()
+    prop_id = data.get('prop_id')
+    ans = data.get('answer')
+    
+    result = correct_over_under_prop(prop_id, ans)
     return jsonify(result)

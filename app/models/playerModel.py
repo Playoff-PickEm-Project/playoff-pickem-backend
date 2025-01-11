@@ -23,7 +23,7 @@ class Player(db.Model):
     user = db.relationship('User', foreign_keys=[user_id], back_populates='user_players')
     
     # In order to calculate the number of points a player has.
-    points = db.Column(db.Integer)
+    points = db.Column(db.Numeric)
     
     player_winner_loser_answers = db.relationship('WinnerLoserAnswer', foreign_keys=[WinnerLoserAnswer.player_id])
     player_over_under_answers = db.relationship('OverUnderAnswer', foreign_keys=[OverUnderAnswer.player_id])

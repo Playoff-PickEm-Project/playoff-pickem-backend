@@ -96,7 +96,8 @@ def create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuest
     new_game = Game(
         league_id = league.id,
         game_name = gameName,
-        start_time = date
+        start_time = date,
+        graded = 0
     )
     
     print(date)
@@ -173,6 +174,37 @@ def grade_game(game_id):
         
     if (game is None):
         abort(401, "Game not found.")
+        
+    if game.graded != 0:
+        for prop in game.winner_loser_props:
+            # Get all the answers for the current prop (for all players)
+            answers = get_winner_loser_answers_for_prop(prop.id)
+            
+            # Iterate through each answer to grade it
+            for answer in answers:
+                player = get_player_by_id(answer.player_id)  # Get the player who submitted the answer
+                
+                # Check if the player's answer matches the correct answer
+                if answer.answer == prop.correct_answer:
+                    # If the answer is correct, assign the appropriate points
+                    if answer.answer == prop.favorite_team:
+                        player.points -= prop.favorite_points  # Add favorite points
+                    elif answer.answer == prop.underdog_team:
+                        player.points -= prop.underdog_points
+                        
+    if game.graded != 0:
+        for prop in game.over_under_props:
+            answers = get_over_under_answers_for_prop(prop.id)
+            
+            for answer in answers:
+                player = get_player_by_id(answer.player_id)
+                
+                # IDK WHY LOWERCASE BUT KEEP AN EYE ON
+                if answer.answer == prop.correct_answer:
+                    if answer.answer == "over":
+                        player.points -= prop.over_points
+                    elif answer.answer == "under":
+                        player.points -= prop.under_points
     
     # Iterate through the winner_loser_props of the game
     for prop in game.winner_loser_props:
@@ -190,10 +222,7 @@ def grade_game(game_id):
                     player.points += prop.favorite_points  # Add favorite points
                 elif answer.answer == prop.underdog_team:
                     player.points += prop.underdog_points  # Add underdog points
-                
-                # You can log or store any additional data related to grading if needed
-                # For example, you might want to create/update an entry in another table
-                
+                                    
     for prop in game.over_under_props:
         answers = get_over_under_answers_for_prop(prop.id)
         
@@ -218,24 +247,6 @@ def set_correct_winner_loser_prop(leaguename, prop_id, ans):
     game = Game.query.filter_by(id=prop.game_id).first()
     if (game is None):
         abort(401, "Game not found")
-    
-    
-    if game.graded != 0:
-        for prop in game.winner_loser_props:
-            # Get all the answers for the current prop (for all players)
-            answers = get_winner_loser_answers_for_prop(prop.id)
-            
-            # Iterate through each answer to grade it
-            for answer in answers:
-                player = get_player_by_id(answer.player_id)  # Get the player who submitted the answer
-                
-                # Check if the player's answer matches the correct answer
-                if answer.answer == prop.correct_answer:
-                    # If the answer is correct, assign the appropriate points
-                    if answer.answer == prop.favorite_team:
-                        player.points -= prop.favorite_points  # Add favorite points
-                    elif answer.answer == prop.underdog_team:
-                        player.points -= prop.underdog_points
 
     if (prop is None):
         abort(401, "Prop not found")
@@ -255,7 +266,6 @@ def set_correct_over_under_prop(leaguename, prop_id, ans):
             
             for answer in answers:
                 player = get_player_by_id(answer.player_id)
-                print(answer.answer)
                 
                 # IDK WHY LOWERCASE BUT KEEP AN EYE ON
                 if answer.answer == prop.correct_answer:
@@ -267,9 +277,10 @@ def set_correct_over_under_prop(leaguename, prop_id, ans):
     if (prop is None):
         abort(401, "Prop not found")
 
-    print(answer.answer)
+    print("ANSWER: ", ans)
     prop.correct_answer = ans
     db.session.commit()
+    print("prop answer: ", prop.correct_answer)
     
 def get_games_from_league(leaguename):
     league = get_league_by_name(leaguename)
@@ -278,3 +289,42 @@ def get_games_from_league(leaguename):
         abort(401, "League not found")
         
     return [game.to_dict() for game in league.league_games]
+
+def get_all_picks_from_game(game_id):
+    # Fetch the game object using the provided game_id
+    game = get_game_by_id(game_id)
+
+    picks = []
+
+    # Loop through all winner-loser props and get answers for each one
+    for prop in game.winner_loser_props:
+        answers = get_winner_loser_answers_for_prop(prop.id)
+
+        # Iterate through the answers and associate each player's name with their answer
+        for answer in answers:
+            player = get_player_by_id(answer.player_id)
+            picks.append({
+                "player_name": player.name,  # Assuming the answer has a player_name attribute
+                "answer": answer.answer,            # Assuming the answer has an answer attribute (could be 'favorite' or 'underdog')
+                "prop_id": prop.id,                  # Optionally, you can include the prop_id to track which prop the answer belongs to
+                "correct_answer": prop.correct_answer,
+                "question": prop.question
+            })
+    
+    # Loop through all over-under props and get answers for each one
+    for prop in game.over_under_props:
+        answers = get_over_under_answers_for_prop(prop.id)
+
+        # Iterate through the answers and associate each player's name with their answer
+        for answer in answers:
+            player = get_player_by_id(answer.player_id)
+            picks.append({
+                "player_name": player.name,  # Assuming the answer has a player_name attribute
+                "answer": answer.answer,            # Assuming the answer has an answer attribute (could be 'over' or 'under')
+                "prop_id": prop.id,                  # Optionally, you can include the prop_id to track which prop the answer belongs to
+                "correct_answer": prop.correct_answer,
+                "question": prop.question
+            })
+
+    # Return the list of all picks (player names and their answers)
+    return picks

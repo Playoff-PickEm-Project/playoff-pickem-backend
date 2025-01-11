@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
-from app.services.gameService import answer_over_under_prop, answer_winner_loser_prop, answer_game, grade_game, get_games_from_league
+from app.services.gameService import answer_over_under_prop, answer_winner_loser_prop, answer_game, grade_game, get_games_from_league, get_all_picks_from_game
+from app.services.leagueService import delete_game
 from app.repositories.gameRepository import get_game_by_id
 
 gameController = Blueprint('gameController', __name__)
@@ -65,5 +66,24 @@ def getGamesFromLeague():
     leaguename = request.args.get('leagueName')
     
     result = get_games_from_league(leaguename)
+    
+    return jsonify(result)
+
+@gameController.route('/delete_game', methods=['POST'])
+def deleteGame():
+    data = request.get_json()
+    
+    game_id = data.get('game_id')
+    leaguename = data.get('leaguename')
+    
+    result = delete_game(leaguename, game_id)
+    
+    return jsonify(result)
+
+@gameController.route('/view_all_answers_for_game', methods=['GET'])
+def getAllPicksFromGame():
+    game_id = request.args.get('game_id')
+    
+    result = get_all_picks_from_game(game_id)
     
     return jsonify(result)
