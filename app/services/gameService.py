@@ -175,36 +175,36 @@ def grade_game(game_id):
     if (game is None):
         abort(401, "Game not found.")
         
-    if game.graded != 0:
-        for prop in game.winner_loser_props:
-            # Get all the answers for the current prop (for all players)
-            answers = get_winner_loser_answers_for_prop(prop.id)
+    # if game.graded != 0:
+    #     for prop in game.winner_loser_props:
+    #         # Get all the answers for the current prop (for all players)
+    #         answers = get_winner_loser_answers_for_prop(prop.id)
             
-            # Iterate through each answer to grade it
-            for answer in answers:
-                player = get_player_by_id(answer.player_id)  # Get the player who submitted the answer
+    #         # Iterate through each answer to grade it
+    #         for answer in answers:
+    #             player = get_player_by_id(answer.player_id)  # Get the player who submitted the answer
                 
-                # Check if the player's answer matches the correct answer
-                if answer.answer == prop.correct_answer:
-                    # If the answer is correct, assign the appropriate points
-                    if answer.answer == prop.favorite_team:
-                        player.points -= prop.favorite_points  # Add favorite points
-                    elif answer.answer == prop.underdog_team:
-                        player.points -= prop.underdog_points
+    #             # Check if the player's answer matches the correct answer
+    #             if answer.answer == prop.correct_answer:
+    #                 # If the answer is correct, assign the appropriate points
+    #                 if answer.answer == prop.favorite_team:
+    #                     player.points -= prop.favorite_points  # Add favorite points
+    #                 elif answer.answer == prop.underdog_team:
+    #                     player.points -= prop.underdog_points
                         
-    if game.graded != 0:
-        for prop in game.over_under_props:
-            answers = get_over_under_answers_for_prop(prop.id)
+    # if game.graded != 0:
+    #     for prop in game.over_under_props:
+    #         answers = get_over_under_answers_for_prop(prop.id)
             
-            for answer in answers:
-                player = get_player_by_id(answer.player_id)
+    #         for answer in answers:
+    #             player = get_player_by_id(answer.player_id)
                 
-                # IDK WHY LOWERCASE BUT KEEP AN EYE ON
-                if answer.answer == prop.correct_answer:
-                    if answer.answer == "over":
-                        player.points -= prop.over_points
-                    elif answer.answer == "under":
-                        player.points -= prop.under_points
+    #             # IDK WHY LOWERCASE BUT KEEP AN EYE ON
+    #             if answer.answer == prop.correct_answer:
+    #                 if answer.answer == "over":
+    #                     player.points -= prop.over_points
+    #                 elif answer.answer == "under":
+    #                     player.points -= prop.under_points
     
     # Iterate through the winner_loser_props of the game
     for prop in game.winner_loser_props:
@@ -214,14 +214,21 @@ def grade_game(game_id):
         # Iterate through each answer to grade it
         for answer in answers:
             player = get_player_by_id(answer.player_id)  # Get the player who submitted the answer
+            print("REGRADING NEW CORRECT ANSWER", prop.correct_answer)
+            print("ANSWER.ANSWER", answer.answer)
             
             # Check if the player's answer matches the correct answer
             if answer.answer == prop.correct_answer:
+                print("HERE")
                 # If the answer is correct, assign the appropriate points
                 if answer.answer == prop.favorite_team:
+                    print("Before: ", player.points)
                     player.points += prop.favorite_points  # Add favorite points
+                    print("After: ", player.points)
                 elif answer.answer == prop.underdog_team:
+                    print("Before: ", player.points)
                     player.points += prop.underdog_points  # Add underdog points
+                    print("After: ", player.points)
                                     
     for prop in game.over_under_props:
         answers = get_over_under_answers_for_prop(prop.id)
@@ -242,23 +249,41 @@ def grade_game(game_id):
     db.session.commit()
     
 def set_correct_winner_loser_prop(leaguename, prop_id, ans):        
-    prop = get_winner_loser_prop_by_id(prop_id)
+    p = get_winner_loser_prop_by_id(prop_id)
     
-    game = Game.query.filter_by(id=prop.game_id).first()
+    game = Game.query.filter_by(id=p.game_id).first()
     if (game is None):
         abort(401, "Game not found")
 
-    if (prop is None):
+    if (p is None):
         abort(401, "Prop not found")
+        
+    if game.graded != 0:
+        for prop in game.winner_loser_props:
+            # Get all the answers for the current prop (for all players)
+            answers = get_winner_loser_answers_for_prop(prop.id)
+            
+            # Iterate through each answer to grade it
+            for answer in answers:
+                player = get_player_by_id(answer.player_id)  # Get the player who submitted the answer
+                
+                # Check if the player's answer matches the correct answer
+                if answer.answer == prop.correct_answer:
+                    print(prop.correct_answer)
+                    # If the answer is correct, assign the appropriate points
+                    if answer.answer == prop.favorite_team:
+                        player.points -= prop.favorite_points  # Add favorite points
+                    elif answer.answer == prop.underdog_team:
+                        player.points -= prop.underdog_points
     
-    prop.correct_answer = ans
+    p.correct_answer = ans
     db.session.commit()
 
 
 def set_correct_over_under_prop(leaguename, prop_id, ans):
-    prop = get_over_under_prop_by_id(prop_id)
+    p = get_over_under_prop_by_id(prop_id)
     
-    game = Game.query.filter_by(id=prop.game_id).first()
+    game = Game.query.filter_by(id=p.game_id).first()
     print(game.graded)
     if game.graded != 0:
         for prop in game.over_under_props:
@@ -274,13 +299,13 @@ def set_correct_over_under_prop(leaguename, prop_id, ans):
                     elif answer.answer == "under":
                         player.points -= prop.under_points
 
-    if (prop is None):
+    if (p is None):
         abort(401, "Prop not found")
 
     print("ANSWER: ", ans)
-    prop.correct_answer = ans
+    p.correct_answer = ans
     db.session.commit()
-    print("prop answer: ", prop.correct_answer)
+    print("prop answer: ", p.correct_answer)
     
 def get_games_from_league(leaguename):
     league = get_league_by_name(leaguename)

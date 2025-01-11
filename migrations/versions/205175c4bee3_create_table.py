@@ -54,7 +54,7 @@ def upgrade():
     )
 
     # Drop the old `users` table
-    op.drop_table('users')
+    # op.drop_table('users')
     # ### end Alembic commands ###
 
 

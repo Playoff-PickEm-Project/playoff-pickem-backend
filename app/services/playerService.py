@@ -39,4 +39,9 @@ def get_player_standings(leagueName):
     return league.to_dict()
     
     
+def edit_points(player_id, new_points):
+    player = get_player_by_id(player_id)
     
+    player.points = new_points
+    
+    db.session.commit()

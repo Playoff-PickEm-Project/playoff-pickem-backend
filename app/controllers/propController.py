@@ -1,6 +1,7 @@
 from flask import jsonify, request, Blueprint
 from app.services.propService import retrieve_over_under_answers, retrieve_winner_loser_answers, get_saved_correct_answers, edit_over_under_prop, edit_winner_loser_prop, correct_over_under_prop, correct_winner_loser_prop
 from app.services.gameService import set_correct_winner_loser_prop, set_correct_over_under_prop
+from app.services.playerService import edit_points
 
 propController = Blueprint("propController", __name__)
 
@@ -101,3 +102,14 @@ def correctOverUnderProp():
     
     result = correct_over_under_prop(prop_id, ans)
     return jsonify(result)
+
+@propController.route("/save_new_points", methods=['POST'])
+def saveNewPoints():
+    data = request.get_json()
+    
+    player_id = data.get('player_id')
+    new_points = data.get('new_points')
+    
+    edit_points(player_id, new_points)
+    
+    return {"Message": "New points saved successfully."}
