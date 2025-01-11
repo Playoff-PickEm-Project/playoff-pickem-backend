@@ -15,7 +15,7 @@ POSTGRESQL_PASSWORD = os.getenv('POSTGRESQL_PASSWORD')
 def create_app():
     app = Flask(__name__)
     
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://sathvik_akhil:{POSTGRESQL_PASSWORD}@localhost:5432/playoff_pickems"
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Need to import the model before doing db.init in order for the changes to models to be detected
