@@ -328,13 +328,14 @@ def get_all_picks_from_game(game_id):
         # Iterate through the answers and associate each player's name with their answer
         for answer in answers:
             player = get_player_by_id(answer.player_id)
-            picks.append({
-                "player_name": player.name,  # Assuming the answer has a player_name attribute
-                "answer": answer.answer,            # Assuming the answer has an answer attribute (could be 'favorite' or 'underdog')
-                "prop_id": prop.id,                  # Optionally, you can include the prop_id to track which prop the answer belongs to
-                "correct_answer": prop.correct_answer,
-                "question": prop.question
-            })
+            if player is not None:
+                picks.append({
+                    "player_name": player.name,  # Assuming the answer has a player_name attribute
+                    "answer": answer.answer,            # Assuming the answer has an answer attribute (could be 'favorite' or 'underdog')
+                    "prop_id": prop.id,                  # Optionally, you can include the prop_id to track which prop the answer belongs to
+                    "correct_answer": prop.correct_answer,
+                    "question": prop.question
+                })
     
     # Loop through all over-under props and get answers for each one
     for prop in game.over_under_props:
