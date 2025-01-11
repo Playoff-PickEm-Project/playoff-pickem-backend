@@ -11,7 +11,7 @@ import secrets
 import string
 
 # Generating a random string of size 30, to act as a join code for the league.
-def generate_join_code(length=30):
+def generate_join_code(length=8):
     # Can include uppercase, lowercase, and numbers
     characters = string.ascii_letters + string.digits
     return ''.join(secrets.choice(characters) for _ in range(length))
@@ -148,12 +148,12 @@ def delete_league(leagueName):
     
     if (league is None):
         abort(401, "League not found.")
+        
+    for game in league.league_games:
+        delete_game(leagueName, game.id)
     
     for player in league.league_players:
         delete_player(player.name, leagueName)
-    
-    for game in league.league_games:
-        delete_game(leagueName, game.id)
     
     db.session.delete(league)
     db.session.commit()
