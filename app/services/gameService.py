@@ -218,7 +218,7 @@ def grade_game(game_id):
             print("ANSWER.ANSWER", answer.answer)
             
             # Check if the player's answer matches the correct answer
-            if answer.answer == prop.correct_answer:
+            if player is not None and answer.answer == prop.correct_answer:
                 print("HERE")
                 # If the answer is correct, assign the appropriate points
                 if answer.answer == prop.favorite_team:
@@ -238,7 +238,7 @@ def grade_game(game_id):
             print(answer.answer)
             
             # IDK WHY LOWERCASE BUT KEEP AN EYE ON
-            if answer.answer == prop.correct_answer:
+            if player is not None and answer.answer == prop.correct_answer:
                 if answer.answer == "over":
                     player.points += prop.over_points
                 elif answer.answer == "under":
