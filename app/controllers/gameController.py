@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from app.services.gameService import answer_over_under_prop, answer_winner_loser_prop, answer_game, grade_game, get_games_from_league, get_all_picks_from_game
+from app.services.gameService import answer_over_under_prop, answer_variable_option_prop, answer_winner_loser_prop, answer_game, grade_game, get_games_from_league, get_all_picks_from_game
 from app.services.leagueService import delete_game
 from app.repositories.gameRepository import get_game_by_id
 
@@ -28,6 +28,19 @@ def answerOverUnderProp():
     answer = data.get('answer')
     
     result = answer_over_under_prop(leagueName, username, prop_id, answer)
+    
+    return jsonify(result)
+
+@gameController.route('/answer_variable_option_prop', methods=['POST'])
+def answerVariableOptionProp():
+    data = request.get_json()
+    
+    leagueName = data.get('leagueName')
+    username = data.get('username')
+    prop_id = data.get('prop_id')
+    answer = data.get('answer')
+    
+    result = answer_variable_option_prop(leagueName, username, prop_id, answer)
     
     return jsonify(result)
 

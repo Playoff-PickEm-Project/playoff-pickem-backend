@@ -137,13 +137,21 @@ def delete_game(leagueName, game_id):
         db.session.delete(overUnderProp)
         db.session.commit()
     
+    # DELETE EVERYTHING IN THE VARIABLEOPTIONPROP
+    ######
+    ######
+    ######
+    ######
+    ######
+    ######
+    
     # Finally, delete the game
     db.session.delete(game)
     db.session.commit()
 
 
 # Method to delete a league. Removes all players initially, and then deletes the league.
-def delete_league(leagueName):
+def delete_league(leagueName):#
     league = get_league_by_name(leagueName)
     
     if (league is None):

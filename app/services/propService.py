@@ -3,7 +3,7 @@ from app import db
 from app.repositories.leagueRepository import get_league_by_name
 from app.repositories.playerRepository import get_player_by_id, get_player_by_username_and_leaguename
 from app.repositories.gameRepository import get_game_by_id
-from app.repositories.propRepository import get_all_winner_loser_props_for_game, get_all_over_under_props_for_game, get_over_under_answers_for_prop, get_winner_loser_answers_for_prop, get_winner_loser_prop_by_id, get_over_under_prop_by_id
+from app.repositories.propRepository import get_all_variable_option_props_for_game, get_all_winner_loser_props_for_game, get_all_over_under_props_for_game, get_over_under_answers_for_prop, get_winner_loser_answers_for_prop, get_winner_loser_prop_by_id, get_over_under_prop_by_id
 
 # Retrieving a player's answers if they have already answered a game's form.
 def retrieve_winner_loser_answers(leaguename, username):
@@ -43,6 +43,24 @@ def retrieve_over_under_answers(leaguename, username):
         
     return over_under_answers
 
+def retrieve_variable_option_answers(leaguename, username):
+    league = get_league_by_name(leaguename)
+    
+    if (league is None):
+        abort(401, "League was not found.")
+        
+    player = get_player_by_username_and_leaguename(username, leaguename)
+    
+    if (player is None):
+        abort(401, "Player not found.")
+        
+    variable_option_answers = {}
+    
+    for answer in player.player_variable_option_answers:
+        variable_option_answers[answer.prop_id] = answer.answer
+        
+    return variable_option_answers
+
 def get_saved_correct_answers(game_id):
     game = get_game_by_id(game_id)
 
@@ -52,6 +70,7 @@ def get_saved_correct_answers(game_id):
     # Fetch props and correct answers
     winner_loser_props = get_all_winner_loser_props_for_game(game_id)
     over_under_props = get_all_over_under_props_for_game(game_id)
+    variable_option_props = get_all_variable_option_props_for_game(game_id)
     
     result = []
 
@@ -66,6 +85,14 @@ def get_saved_correct_answers(game_id):
         for prop in over_under_props:
             print(prop.correct_answer)
             result.append({'prop_id': prop.id, 'correct_answer': prop.correct_answer})
+            
+    if variable_option_props:
+        for prop in variable_option_props:
+            print(prop.correct_answer)
+            
+            if prop.correct_answer:
+                for answer in prop.correct_answer:
+                    result.append({'prop_id': prop.id, 'correct_answer': answer})
 
     return result
 

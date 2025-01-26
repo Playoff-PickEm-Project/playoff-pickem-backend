@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from app import db
 from app.models.propAnswers.overUnderAnswer import OverUnderAnswer
+from app.models.propAnswers.variableOptionAnswer import VariableOptionAnswer
 from app.models.propAnswers.winnerLoserAnswer import WinnerLoserAnswer
 
 class Player(db.Model):
@@ -27,6 +28,7 @@ class Player(db.Model):
     
     player_winner_loser_answers = db.relationship('WinnerLoserAnswer', foreign_keys=[WinnerLoserAnswer.player_id])
     player_over_under_answers = db.relationship('OverUnderAnswer', foreign_keys=[OverUnderAnswer.player_id])
+    player_variable_option_answers = db.relationship('VariableOptionAnswer', foreign_keys=[VariableOptionAnswer.player_id])
     
     def to_dict(self):
         return {

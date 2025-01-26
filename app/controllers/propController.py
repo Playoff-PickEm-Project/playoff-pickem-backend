@@ -1,6 +1,6 @@
 from flask import jsonify, request, Blueprint
-from app.services.propService import retrieve_over_under_answers, retrieve_winner_loser_answers, get_saved_correct_answers, edit_over_under_prop, edit_winner_loser_prop, correct_over_under_prop, correct_winner_loser_prop
-from app.services.gameService import set_correct_winner_loser_prop, set_correct_over_under_prop
+from app.services.propService import retrieve_over_under_answers, retrieve_variable_option_answers, retrieve_winner_loser_answers, get_saved_correct_answers, edit_over_under_prop, edit_winner_loser_prop, correct_over_under_prop, correct_winner_loser_prop
+from app.services.gameService import set_correct_variable_option_prop, set_correct_winner_loser_prop, set_correct_over_under_prop
 from app.services.playerService import edit_points
 
 propController = Blueprint("propController", __name__)
@@ -20,6 +20,15 @@ def retrieveOverUnderAnswers():
     username = request.args.get('username')
     
     result = retrieve_over_under_answers(leaguename, username)
+    
+    return jsonify(result)
+
+@propController.route("/retrieve_variable_option_answers", methods=['GET'])
+def retrieveVariableOptionAnswers():
+    leaguename = request.args.get('leagueName')
+    username = request.args.get('username')
+    
+    result = retrieve_variable_option_answers(leaguename, username)
     
     return jsonify(result)
 
@@ -46,6 +55,19 @@ def setCorrectOverUnderProp():
     answer = data.get('answer')
     
     result = set_correct_over_under_prop(leaguename, prop_id, answer)
+    
+    return jsonify(result)
+
+@propController.route("/set_correct_variable_option_prop", methods=['POST'])
+def setCorrectVariableOptionProp():
+    data = request.get_json()
+    
+    # leaguename, prop_id, answer
+    leaguename = data.get("leagueName")
+    prop_id = data.get('prop_id')
+    answer = data.get('answers')
+    
+    result = set_correct_variable_option_prop(leaguename, prop_id, answer)
     
     return jsonify(result)
 

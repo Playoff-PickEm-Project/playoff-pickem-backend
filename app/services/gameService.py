@@ -1,14 +1,17 @@
 from flask import abort
 from app import db
 from app.models.gameModel import Game
+from app.models.propAnswers.variableOptionAnswer import VariableOptionAnswer
 from app.models.props.overUnderProp import OverUnderProp
 from app.models.props.winnerLoserProp import WinnerLoserProp
 from app.models.propAnswers.winnerLoserAnswer import WinnerLoserAnswer
 from app.models.propAnswers.overUnderAnswer import OverUnderAnswer
+from app.models.props.hashMapAnswers import HashMapAnswers
+from app.models.props.variableOptionProp import VariableOptionProp
 from app.repositories.leagueRepository import get_league_by_name
 from app.repositories.gameRepository import get_game_by_id
 from app.repositories.playerRepository import get_player_by_username_and_leaguename, get_player_by_id
-from app.repositories.propRepository import get_winner_loser_prop_by_id, get_over_under_prop_by_id, get_over_under_answers_for_prop, get_winner_loser_answers_for_prop
+from app.repositories.propRepository import get_variable_option_answers_for_prop, get_variable_option_prop_by_id, get_winner_loser_prop_by_id, get_over_under_prop_by_id, get_over_under_answers_for_prop, get_winner_loser_answers_for_prop
 
 # Method to save answers for a game (overall)
 def answer_game(leagueName, username, game_id, answer):
@@ -22,6 +25,9 @@ def answer_game(leagueName, username, game_id, answer):
     
     for overUnderProp in game.over_under_props:
         answer_over_under_prop(leagueName, username, overUnderProp.id, answer)
+        
+    for variableOptionProp in game.variable_option_props:
+        answer_variable_option_prop(leagueName, username, variableOptionProp.id, answer)
         
     return {"Message": "Game answered by player successfully."}
 
@@ -84,10 +90,38 @@ def answer_over_under_prop(leagueName, username, prop_id, answer):
 
         return {"Message": "Over/Under prop successfully answered."}
 
+def answer_variable_option_prop(leagueName, username, prop_id, answer):
+    player = get_player_by_username_and_leaguename(username, leagueName)
+    
+    if player is None:
+        abort(401, "Player not found")
+    
+    # Check if the player has already answered this prop_id
+    existing_answer = VariableOptionAnswer.query.filter_by(prop_id=prop_id, player_id=player.id).first()
+    print("HERE")
+    
+    if existing_answer:
+        # If the player has already answered, update the existing answer
+        existing_answer.answer = answer
+        db.session.commit()
+        return {"Message": "Over/Under prop answer updated successfully."}
+    else:
+        # If the player hasn't answered yet, create a new answer
+        new_answer = VariableOptionAnswer(
+            answer=answer,
+            prop_id=prop_id,
+            player_id=player.id
+        )
+        db.session.add(new_answer)
+        db.session.commit()
 
+        player.player_variable_option_answers.append(new_answer)
+        db.session.commit()
+
+        return {"Message": "Over/Under prop successfully answered."}
 
 # This method is to create a game within a league.
-def create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions):
+def create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions):
     league = get_league_by_name(leagueName)
     
     if (league is None):
@@ -111,14 +145,49 @@ def create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuest
     for overUnderProp in overUnderQuestions:
         createOverUnderQuestion(overUnderProp, new_game.id)
         
+    for variableOptionProp in variableOptionQuestions:
+        createVariableOptionQuestion(variableOptionProp, new_game.id)
+        
     league.league_games.append(new_game)
     
     db.session.commit()
         
     return {"message": "Created game successfully."}
 
+def createVariableOptionQuestion(variableOptionProp, game_id):
+    game = get_game_by_id(game_id)
+    
+    question = variableOptionProp.get("question")
+    options = variableOptionProp.get("options")
+    
+    new_prop = VariableOptionProp(
+        game_id = game_id,
+        question = question,
+    )
+    
+    new_prop.options = []
+    
+    game.variable_option_props.append(new_prop)
+    
+    for option in options:
+        print(option)
+        new_choice = HashMapAnswers(
+            answer_choice = option.get('choice_text'),
+            answer_points = option.get('points')
+        )
+        db.session.add(new_choice)
+        
+        new_prop.options.append(new_choice)
+    
+    db.session.add(new_prop)
+
+    db.session.commit()    
+    return {"message": "Created prop successfully."}
+    
+
 def createWinnerLoserQuestion(winnerLoserProp, game_id):
     game = get_game_by_id(game_id)
+    print(winnerLoserProp)
 
     question = winnerLoserProp.get("question")
     favoritePoints = winnerLoserProp.get("favoritePoints")
@@ -244,9 +313,51 @@ def grade_game(game_id):
                 elif answer.answer == "under":
                     player.points += prop.under_points
                     
+    for prop in game.variable_option_props:
+        answers = get_variable_option_answers_for_prop(prop.id)
+        
+        for answer in answers:
+            player = get_player_by_id(answer.player_id)
+            
+            for correct in prop.correct_answer:
+                if player is not None and answer.answer == correct:
+                    points_to_add = 0
+                    
+                    for option in prop.options:
+                        if answer.answer == option.answer_choice:
+                            points_to_add = option.answer_points
+                    
+                    print(points_to_add)
+                    player.points += points_to_add
+                    
     game.graded = 1
     
     db.session.commit()
+
+def set_correct_variable_option_prop(leaguename, prop_id, ans):
+    p = get_variable_option_prop_by_id(prop_id)
+    print(prop_id)
+    
+    if (p is None):
+        abort(401, "Prop not found")
+    
+    game = Game.query.filter_by(id=p.game_id).first()
+    
+    if (game is None):
+        abort(401, "Game not found")
+      
+    # NOT SURE FIX LATER?????????  
+    # if game.graded != 0:
+    #     for prop in game.variable_option_props:
+    #         answers = get_variable_option_answers_for_prop(prop.id)
+            
+    #         for answer in answers:
+    #             pass
+    
+    print(ans)
+    p.correct_answer = ans
+    db.session.commit()
+    
     
 def set_correct_winner_loser_prop(leaguename, prop_id, ans):        
     p = get_winner_loser_prop_by_id(prop_id)
@@ -278,7 +389,6 @@ def set_correct_winner_loser_prop(leaguename, prop_id, ans):
     
     p.correct_answer = ans
     db.session.commit()
-
 
 def set_correct_over_under_prop(leaguename, prop_id, ans):
     p = get_over_under_prop_by_id(prop_id)
@@ -340,6 +450,22 @@ def get_all_picks_from_game(game_id):
     # Loop through all over-under props and get answers for each one
     for prop in game.over_under_props:
         answers = get_over_under_answers_for_prop(prop.id)
+
+        # Iterate through the answers and associate each player's name with their answer
+        for answer in answers:
+            player = get_player_by_id(answer.player_id)
+            if player is not None:
+                picks.append({
+                    "player_name": player.name,  # Assuming the answer has a player_name attribute
+                    "answer": answer.answer,            # Assuming the answer has an answer attribute (could be 'over' or 'under')
+                    "prop_id": prop.id,                  # Optionally, you can include the prop_id to track which prop the answer belongs to
+                    "correct_answer": prop.correct_answer,
+                    "question": prop.question
+                })
+                
+    # Loop through all over-under props and get answers for each one
+    for prop in game.variable_option_props:
+        answers = get_variable_option_answers_for_prop(prop.id)
 
         # Iterate through the answers and associate each player's name with their answer
         for answer in answers:
