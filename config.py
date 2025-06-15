@@ -1,7 +1,23 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Config:
-    # Using the internal PostgreSQL database URL
-    SQLALCHEMY_DATABASE_URI = "postgresql://akhil:25JdKdhLwEwqxRpal6ldJSxWOQRDL1X8@dpg-cu129kdsvqrc73em1620-a/playoff_pickem"
-    SQLALCHEMY_TRACK_MODIFICATIONS = False  # Optional but recommended for performance
-    SECRET_KEY = os.getenv("SECRET_KEY", "your_default_secret_key")  # Optional: Secret key for session management
+    # Flask configuration
+    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
+    
+    # Database configuration
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
+    # Session configuration
+    SESSION_TYPE = 'filesystem'
+    SESSION_FILE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flask_session')
+    SESSION_FILE_THRESHOLD = 500
+    PERMANENT_SESSION_LIFETIME = 604800  # 7 days in seconds
+    
+    # Cookie configuration
+    SESSION_COOKIE_SECURE = os.getenv('FLASK_ENV') == 'production'
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'

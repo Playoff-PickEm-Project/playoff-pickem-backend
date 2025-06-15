@@ -6,17 +6,31 @@ from app.controllers.usersController import usersController
 from app.controllers.leagueController import leagueController
 from app.controllers.gameController import gameController
 from flask_cors import CORS
+from datetime import timedelta
+import os
 
 app = create_app()  # Initialize the app
 
-CORS(app, resources={
-    r"/*": {
-        "origins": [
-            "https://playoff-pickem-frontend-q31n.onrender.com", 
-            "http://localhost:3000"
-        ]
-    }
-})
+# Configure session
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+
+# Configure CORS with credentials support
+CORS(app, 
+     resources={r"/*": {
+         "origins": [
+             "https://playoff-pickem-frontend-q31n.onrender.com", 
+             "http://localhost:3000"
+         ],
+         "supports_credentials": True,
+         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         "allow_headers": ["Content-Type", "Authorization"],
+         "expose_headers": ["Content-Type", "Authorization"],
+         "max_age": 3600
+     }},
+     supports_credentials=True)
 
 @app.after_request
 def add_cache_headers(response):
