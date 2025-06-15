@@ -5,7 +5,7 @@ class HashMapAnswers(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
     answer_choice = db.Column(db.String(100))
-    answer_points = db.Column(db.Integer)
+    answer_points = db.Column(db.Numeric)
     
     prop_id = db.Column(db.Integer, db.ForeignKey('variable_option_prop.id'))
     
