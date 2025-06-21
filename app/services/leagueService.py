@@ -18,6 +18,7 @@ def generate_join_code(length=8):
 
 # Method to create a league. Makes sure to also add the first player to the league.
 def create_league(leagueName, username, playerName):
+		# Checking to see if a league with the same name already exists. If it does, return error.
     league = get_league_by_name(leagueName)
     
     if (league is not None):
@@ -106,6 +107,7 @@ def delete_player(playerName, leagueName):
     
     return {"message": "Player deleted successfully."}
 
+# Method to delete a game from a league. Unfinished method, need to finish.
 def delete_game(leagueName, game_id):
     league = get_league_by_name(leagueName)
     game = get_game_by_id(game_id)

@@ -33,12 +33,13 @@ def create_player(playerName, username, leaguename):
     
     return new_player
 
+# Method to retrieve player standings? Not too sure why this is the way it is tbh. figure out later
 def get_player_standings(leagueName):
     league = get_league_by_name(leagueName)
         
     return league.to_dict()
     
-    
+# Method to edit the points of a specific player.
 def edit_points(player_id, new_points):
     player = get_player_by_id(player_id)
     

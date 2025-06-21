@@ -1,3 +1,4 @@
+# The user model is for each user. Every person will have their own unique profile.
 from flask_sqlalchemy import SQLAlchemy
 from app import db
 
@@ -5,6 +6,7 @@ from app import db
 class User(db.Model):
     # Creating all the fields for this entity. Every entity needs an id
     id = db.Column(db.Integer, primary_key=True)
+    # Setting username to be unique allows us to easily identify users in the code. 
     username = db.Column(db.String(75), unique=True, nullable=False)
     password = db.Column(db.String(128), unique=False, nullable=True)  # Made nullable for OAuth users
     auth_provider = db.Column(db.String(20), default='local')  # 'local' or 'google'
