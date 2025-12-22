@@ -13,7 +13,8 @@ from app.repositories.gameRepository import get_game_by_id
 from app.repositories.playerRepository import get_player_by_username_and_leaguename, get_player_by_id
 from app.repositories.propRepository import get_variable_option_answers_for_prop, get_variable_option_prop_by_id, get_winner_loser_prop_by_id, get_over_under_prop_by_id, get_over_under_answers_for_prop, get_winner_loser_answers_for_prop
 
-# Method to save answers for a game (overall)
+# Method to save answers for a game (overall). Uses helper functions to answer each specific type of prop, by iterating through each of the 
+# props in the game.
 def answer_game(leagueName, username, game_id, answer):
     game = get_game_by_id(game_id)
     
@@ -31,7 +32,7 @@ def answer_game(leagueName, username, game_id, answer):
         
     return {"Message": "Game answered by player successfully."}
 
-# Method to allow for a player to save their answers for a specific game. (Winner/Loser Prop)
+# Method to allow for a player to save their answers for a specific prop. (Winner/Loser Prop)
 def answer_winner_loser_prop(leagueName, username, prop_id, answer):
     player = get_player_by_username_and_leaguename(username, leagueName)
     
@@ -61,6 +62,7 @@ def answer_winner_loser_prop(leagueName, username, prop_id, answer):
 
         return {"Message": "Winner/Loser prop successfully answered."}
 
+# Method to allow for a player to save their answers for a specific prop. (Over/Under Prop)
 def answer_over_under_prop(leagueName, username, prop_id, answer):
     player = get_player_by_username_and_leaguename(username, leagueName)
     
@@ -90,6 +92,7 @@ def answer_over_under_prop(leagueName, username, prop_id, answer):
 
         return {"Message": "Over/Under prop successfully answered."}
 
+# Method to allow for a player to save their answers for a specific prop. (Variable # of options Prop)
 def answer_variable_option_prop(leagueName, username, prop_id, answer):
     player = get_player_by_username_and_leaguename(username, leagueName)
     
@@ -122,11 +125,13 @@ def answer_variable_option_prop(leagueName, username, prop_id, answer):
 
 # This method is to create a game within a league.
 def create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions):
+		# Get the league the request is being made from.
     league = get_league_by_name(leagueName)
     
     if (league is None):
         abort(401, "League not found")
     
+    # Create a new game with the basic fields that we know must be true (based on arguments).
     new_game = Game(
         league_id = league.id,
         game_name = gameName,
@@ -136,9 +141,12 @@ def create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuest
     
     print(date)
     
+    # Db.session.add adds the game into the database (note that we import the db from our __init__ file I believe). 
+    # Db.session.commit() saves the changes I believe.
     db.session.add(new_game)
     db.session.commit()
     
+    # Iterate through each type of question to create an individual prop for it.
     for winnerLoserProp in winnerLoserQuestions:
         createWinnerLoserQuestion(winnerLoserProp, new_game.id)
         
@@ -154,12 +162,15 @@ def create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuest
         
     return {"message": "Created game successfully."}
 
+# Method to create a variable option prop.
 def createVariableOptionQuestion(variableOptionProp, game_id):
     game = get_game_by_id(game_id)
     
+    # From the argument, retrieve the question and answer choices (a list of tuples basically; idk if that's exactly accurate tho).
     question = variableOptionProp.get("question")
     options = variableOptionProp.get("options")
     
+    # Rest from here on out is pretty self explanatory. Just setting the fields based on the arg.
     new_prop = VariableOptionProp(
         game_id = game_id,
         question = question,
@@ -184,7 +195,7 @@ def createVariableOptionQuestion(variableOptionProp, game_id):
     db.session.commit()    
     return {"message": "Created prop successfully."}
     
-
+# Method to create a winner loser prop. Similar to previous method.
 def createWinnerLoserQuestion(winnerLoserProp, game_id):
     game = get_game_by_id(game_id)
     print(winnerLoserProp)
@@ -211,7 +222,7 @@ def createWinnerLoserQuestion(winnerLoserProp, game_id):
     
     return {"message": "Created winner/loser prop successfully."}
     
-
+# Method to create over under question. Similar to previous method.
 def createOverUnderQuestion(overUnderProp, game_id):
     game = get_game_by_id(game_id)
     
@@ -233,11 +244,13 @@ def createOverUnderQuestion(overUnderProp, game_id):
     
     return {"message": "Created over/under prop successfully."}
 
+# Method to view all of the games within a league.
 def view_games_in_league(leagueName):
     league = get_league_by_name(leagueName)
     
     return [game.to_dict() for game in league.league_games]
 
+# Method to grade a game. I will not write a full comment out for this because we need to clean this up, including the regrading part.
 def grade_game(game_id):
     game = get_game_by_id(game_id)
         
@@ -334,6 +347,7 @@ def grade_game(game_id):
     
     db.session.commit()
 
+# Method intended to set the correct answers for variable option prop. Again, need to do more testing with this, won't comment.
 def set_correct_variable_option_prop(leaguename, prop_id, ans):
     p = get_variable_option_prop_by_id(prop_id)
     print(prop_id)
@@ -358,7 +372,7 @@ def set_correct_variable_option_prop(leaguename, prop_id, ans):
     p.correct_answer = ans
     db.session.commit()
     
-    
+# Similar to previous method, for winner loser prop.
 def set_correct_winner_loser_prop(leaguename, prop_id, ans):        
     p = get_winner_loser_prop_by_id(prop_id)
     
@@ -390,6 +404,7 @@ def set_correct_winner_loser_prop(leaguename, prop_id, ans):
     p.correct_answer = ans
     db.session.commit()
 
+# Similar to previous method, for over under prop.
 def set_correct_over_under_prop(leaguename, prop_id, ans):
     p = get_over_under_prop_by_id(prop_id)
     
@@ -416,7 +431,9 @@ def set_correct_over_under_prop(leaguename, prop_id, ans):
     p.correct_answer = ans
     db.session.commit()
     print("prop answer: ", p.correct_answer)
-    
+
+# Method to get all of games within a league.
+### Note: I AM NOW REALIZING THIS IS A DUPLICATE METHOD. FIND WHERE THIS IS USED AND REPLACE WITH ORIGINAL THEN DELETE.
 def get_games_from_league(leaguename):
     league = get_league_by_name(leaguename)
 
@@ -425,6 +442,7 @@ def get_games_from_league(leaguename):
         
     return [game.to_dict() for game in league.league_games]
 
+# Method to get all of the answers for a game.
 def get_all_picks_from_game(game_id):
     # Fetch the game object using the provided game_id
     game = get_game_by_id(game_id)
