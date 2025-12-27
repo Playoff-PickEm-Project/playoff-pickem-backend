@@ -223,7 +223,7 @@ class GameService:
             return {"Message": "Over/Under prop successfully answered."}
 
     @staticmethod
-    def create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions):
+    def create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions, externalGameId=None):
         """
         Create a new game within a league with multiple prop types.
 
@@ -237,6 +237,7 @@ class GameService:
             winnerLoserQuestions (list): List of dictionaries containing winner/loser prop data.
             overUnderQuestions (list): List of dictionaries containing over/under prop data.
             variableOptionQuestions (list): List of dictionaries containing variable option prop data.
+            externalGameId (str, optional): ESPN game ID for live polling.
 
         Returns:
             dict: A success message if the game is created successfully.
@@ -255,7 +256,8 @@ class GameService:
             league_id = league.id,
             game_name = gameName,
             start_time = date,
-            graded = 0
+            graded = 0,
+            external_game_id = externalGameId  # Store ESPN game ID for polling
         )
 
         print(date)
@@ -348,6 +350,8 @@ class GameService:
         underdogPoints = winnerLoserProp.get("underdogPoints")
         favoriteTeam = winnerLoserProp.get("favoriteTeam")
         underdogTeam = winnerLoserProp.get("underdogTeam")
+        favoriteTeamId = winnerLoserProp.get("favoriteTeamId")
+        underdogTeamId = winnerLoserProp.get("underdogTeamId")
 
         new_prop = WinnerLoserProp(
             game_id = game_id,
@@ -355,7 +359,11 @@ class GameService:
             favorite_points = favoritePoints,
             underdog_points = underdogPoints,
             favorite_team = favoriteTeam,
-            underdog_team = underdogTeam
+            underdog_team = underdogTeam,
+            team_a_id = favoriteTeamId,
+            team_b_id = underdogTeamId,
+            team_a_name = favoriteTeam,
+            team_b_name = underdogTeam
         )
 
         game.winner_loser_props.append(new_prop)
@@ -384,12 +392,20 @@ class GameService:
         question = overUnderProp.get("question")
         overPoints = overUnderProp.get("overPoints")
         underPoints = overUnderProp.get("underPoints")
+        playerName = overUnderProp.get("playerName")
+        playerId = overUnderProp.get("playerId")
+        statType = overUnderProp.get("statType")
+        lineValue = overUnderProp.get("lineValue")
 
         new_prop = OverUnderProp(
             game_id = game_id,
             question = question,
             over_points = overPoints,
-            under_points = underPoints
+            under_points = underPoints,
+            player_name = playerName,
+            player_id = playerId,
+            stat_type = statType,
+            line_value = lineValue
         )
 
         game.over_under_props.append(new_prop)

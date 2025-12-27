@@ -5,6 +5,7 @@ from app.controllers.propController import propController
 from app.controllers.usersController import usersController
 from app.controllers.leagueController import leagueController
 from app.controllers.gameController import gameController
+from app.controllers.liveStatsController import liveStatsController
 from flask import request
 from flask_cors import CORS
 from datetime import timedelta
@@ -28,6 +29,7 @@ app.register_blueprint(usersController)
 app.register_blueprint(leagueController)
 app.register_blueprint(gameController)
 app.register_blueprint(propController)
+app.register_blueprint(liveStatsController)
 
 if __name__ == "__main__":
     app.run(debug=True)

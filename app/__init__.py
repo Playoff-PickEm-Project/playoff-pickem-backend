@@ -44,5 +44,9 @@ def create_app():
     # Initialize the app with SQLAlchemy and Migrate
     db.init_app(app)
     migrate.init_app(app, db)
-    
+
+    # Initialize the game polling scheduler (do this OUTSIDE app_context)
+    from app.services.game.schedulerService import SchedulerService
+    SchedulerService.initialize_scheduler()
+
     return app
