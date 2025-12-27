@@ -37,12 +37,31 @@ class Game(db.Model):
     
     # Field intended to check if the game is graded or not. 0 represents not graded, non-zero represents graded.
     graded = db.Column(db.Integer)
-    
+
+    ## Fields for live game polling and tracking
+    # External ESPN game ID for API polling
+    external_game_id = db.Column(db.String(100), nullable=True)
+
+    # Whether the game is currently being polled for live updates
+    is_polling = db.Column(db.Boolean, default=False, nullable=False)
+
+    # Whether the game has finished (status = FINAL from ESPN)
+    is_completed = db.Column(db.Boolean, default=False, nullable=False)
+
+    # Live scores for the two teams (updated during polling)
+    team_a_score = db.Column(db.Integer, nullable=True)
+    team_b_score = db.Column(db.Integer, nullable=True)
+
     def to_dict(self):
         return {
             'id': self.id,
             'game_name': self.game_name,
             'start_time': self.start_time,
+            'external_game_id': self.external_game_id,
+            'is_polling': self.is_polling,
+            'is_completed': self.is_completed,
+            'team_a_score': self.team_a_score,
+            'team_b_score': self.team_b_score,
             'winner_loser_props': [prop.to_dict() for prop in self.winner_loser_props],
             'over_under_props': [prop.to_dict() for prop in self.over_under_props],
             'variable_option_props': [prop.to_dict() for prop in self.variable_option_props],

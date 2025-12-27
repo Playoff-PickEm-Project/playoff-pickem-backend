@@ -26,6 +26,47 @@ class GradeGameService:
     """
 
     @staticmethod
+    def auto_grade_props_from_live_data(game):
+        """
+        Automatically set correct answers for O/U and W/L props based on live data.
+
+        This method is called after a game completes and before grading. It:
+        - Sets correct_answer for Over/Under props by comparing current_value to line_value
+        - Sets correct_answer for Winner/Loser props by comparing team scores
+
+        Args:
+            game (Game): The completed game object with updated live data.
+
+        Returns:
+            None
+        """
+        # Auto-grade Over/Under props
+        for prop in game.over_under_props:
+            # Only auto-grade if we have the necessary data
+            if prop.current_value is not None and prop.line_value is not None:
+                if prop.current_value > prop.line_value:
+                    prop.correct_answer = "Over"
+                elif prop.current_value < prop.line_value:
+                    prop.correct_answer = "Under"
+                # If exactly equal, could be a push - leave correct_answer as None or handle separately
+                print(f"Auto-graded O/U prop {prop.id}: {prop.correct_answer} (current: {prop.current_value}, line: {prop.line_value})")
+
+        # Auto-grade Winner/Loser props
+        for prop in game.winner_loser_props:
+            # Only auto-grade if we have team scores
+            if prop.team_a_score is not None and prop.team_b_score is not None:
+                if prop.team_a_score > prop.team_b_score:
+                    # Team A won - set correct_answer to whichever team is team_a
+                    prop.correct_answer = prop.favorite_team if prop.team_a_id == prop.favorite_team else prop.underdog_team
+                elif prop.team_b_score > prop.team_a_score:
+                    # Team B won
+                    prop.correct_answer = prop.favorite_team if prop.team_b_id == prop.favorite_team else prop.underdog_team
+                # If scores are equal, it's a tie - leave correct_answer as None
+                print(f"Auto-graded W/L prop {prop.id}: {prop.correct_answer}")
+
+        db.session.commit()
+
+    @staticmethod
     def grade_game(game_id):
         """
         Grade a game by awarding points to players for correct answers.
