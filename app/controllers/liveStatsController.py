@@ -115,6 +115,9 @@ def get_live_stats(game_id):
         })
 
     winner_loser_stats = []
+    team_a_name = None
+    team_b_name = None
+
     for prop in game.winner_loser_props:
         winner_loser_stats.append({
             "prop_id": prop.id,
@@ -125,12 +128,18 @@ def get_live_stats(game_id):
             "team_b_score": prop.team_b_score,
             "winning_team_id": prop.winning_team_id
         })
+        # Get team names from the first winner/loser prop for display
+        if team_a_name is None:
+            team_a_name = prop.team_a_name
+            team_b_name = prop.team_b_name
 
     return jsonify({
         "game_id": game_id,
         "game_name": game.game_name,
         "is_completed": game.is_completed,
         "is_polling": game.is_polling,
+        "team_a_name": team_a_name,
+        "team_b_name": team_b_name,
         "team_a_score": game.team_a_score,
         "team_b_score": game.team_b_score,
         "over_under_props": over_under_stats,

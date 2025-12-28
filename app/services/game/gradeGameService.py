@@ -45,9 +45,9 @@ class GradeGameService:
             # Only auto-grade if we have the necessary data
             if prop.current_value is not None and prop.line_value is not None:
                 if prop.current_value > prop.line_value:
-                    prop.correct_answer = "Over"
+                    prop.correct_answer = "over"  # Lowercase to match player answers
                 elif prop.current_value < prop.line_value:
-                    prop.correct_answer = "Under"
+                    prop.correct_answer = "under"  # Lowercase to match player answers
                 # If exactly equal, could be a push - leave correct_answer as None or handle separately
                 print(f"Auto-graded O/U prop {prop.id}: {prop.correct_answer} (current: {prop.current_value}, line: {prop.line_value})")
 
