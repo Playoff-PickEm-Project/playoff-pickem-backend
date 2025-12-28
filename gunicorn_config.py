@@ -41,8 +41,11 @@ def post_fork(server, worker):
     if not scheduler_initialized:
         server.log.info("Attempting to initialize APScheduler in worker %s", worker.pid)
         from app.services.game.schedulerService import SchedulerService
+        from app import create_app
         try:
-            SchedulerService.initialize_scheduler()
+            # Create app instance for the scheduler to use
+            app = create_app()
+            SchedulerService.initialize_scheduler(app)
             scheduler_initialized = True
             server.log.info("APScheduler successfully initialized in worker %s", worker.pid)
         except Exception as e:
