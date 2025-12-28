@@ -11,6 +11,12 @@ from apscheduler.triggers.interval import IntervalTrigger
 from app.services.game.pollingService import PollingService
 from flask import current_app
 import atexit
+import logging
+import sys
+
+# Force output to stderr to ensure logs appear
+sys.stdout.flush()
+sys.stderr.flush()
 
 
 class SchedulerService:
@@ -48,11 +54,27 @@ class SchedulerService:
         # Store the app instance
         SchedulerService.app = app
 
-        # Create background scheduler
-        scheduler = BackgroundScheduler()
+        # Configure APScheduler logging
+        logging.basicConfig()
+        logging.getLogger('apscheduler').setLevel(logging.DEBUG)
+
+        # Create background scheduler with explicit configuration
+        scheduler = BackgroundScheduler({
+            'apscheduler.jobstores.default': {
+                'type': 'memory'
+            },
+            'apscheduler.executors.default': {
+                'class': 'apscheduler.executors.pool:ThreadPoolExecutor',
+                'max_workers': '1'
+            },
+            'apscheduler.job_defaults.coalesce': 'false',
+            'apscheduler.job_defaults.max_instances': '1'
+        })
 
         # Create wrapper function that runs polling with app context
         def poll_with_context():
+            sys.stderr.write("[SCHEDULER JOB] Polling job triggered\n")
+            sys.stderr.flush()
             with SchedulerService.app.app_context():
                 PollingService.poll_all_active_games()
 
@@ -67,17 +89,27 @@ class SchedulerService:
 
         # Start the scheduler
         scheduler.start()
-        print("APScheduler initialized and started polling every 2 minutes")
+        sys.stderr.write("APScheduler initialized and started polling every 2 minutes\n")
+        sys.stderr.flush()
+
+        # Log next run time
+        jobs = scheduler.get_jobs()
+        if jobs:
+            next_run = jobs[0].next_run_time
+            sys.stderr.write(f"[SCHEDULER] Next poll scheduled for: {next_run}\n")
+            sys.stderr.flush()
 
         # Run one poll immediately on startup to test
-        print("[SCHEDULER] Running initial poll on startup...")
+        sys.stderr.write("[SCHEDULER] Running initial poll on startup...\n")
+        sys.stderr.flush()
         try:
             with app.app_context():
                 PollingService.poll_all_active_games()
         except Exception as e:
-            print(f"[SCHEDULER] Error during initial poll: {e}")
+            sys.stderr.write(f"[SCHEDULER] Error during initial poll: {e}\n")
             import traceback
-            print(f"[SCHEDULER] Traceback: {traceback.format_exc()}")
+            sys.stderr.write(f"[SCHEDULER] Traceback: {traceback.format_exc()}\n")
+            sys.stderr.flush()
 
         # Store scheduler instance
         SchedulerService.scheduler = scheduler
