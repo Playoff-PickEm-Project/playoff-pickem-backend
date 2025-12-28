@@ -147,12 +147,18 @@ class PollingService:
             scores (dict): Dictionary of team scores from ESPN.
         """
         for prop in game.winner_loser_props:
-            # Update team scores if we have team IDs
+            # Try to update using team IDs first
             if prop.team_a_id and prop.team_a_id in scores:
                 prop.team_a_score = scores[prop.team_a_id]
+            elif game.team_a_score is not None:
+                # Fallback: use game-level scores if team IDs not set
+                prop.team_a_score = game.team_a_score
 
             if prop.team_b_id and prop.team_b_id in scores:
                 prop.team_b_score = scores[prop.team_b_id]
+            elif game.team_b_score is not None:
+                # Fallback: use game-level scores if team IDs not set
+                prop.team_b_score = game.team_b_score
 
             # If game is completed, set the winning team
             if ESPNClientService.is_game_completed(game_data):
