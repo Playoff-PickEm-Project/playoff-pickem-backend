@@ -175,20 +175,24 @@ class PollingService:
                   - games_failed: Number of games that failed to poll
                   - games_completed: Number of games that finished this poll
         """
+        print(f"[POLLING] Checking for active games at {datetime.now(timezone.utc)}")
         games = PollingService.get_games_to_poll()
 
         if not games:
+            print("[POLLING] No active games to poll at this time")
             return {
                 "games_polled": 0,
                 "games_failed": 0,
                 "games_completed": 0
             }
 
+        print(f"[POLLING] Found {len(games)} game(s) to poll")
         polled_count = 0
         failed_count = 0
         completed_count = 0
 
         for game in games:
+            print(f"[POLLING] Polling game {game.id}: {game.game_name}")
             was_completed = game.is_completed
             success = PollingService.poll_game(game)
 
@@ -200,7 +204,7 @@ class PollingService:
             else:
                 failed_count += 1
 
-        print(f"Polling complete: {polled_count} polled, {failed_count} failed, {completed_count} completed")
+        print(f"[POLLING] Polling complete: {polled_count} polled, {failed_count} failed, {completed_count} completed")
 
         return {
             "games_polled": polled_count,
