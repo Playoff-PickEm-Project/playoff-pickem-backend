@@ -45,8 +45,6 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # Initialize the game polling scheduler (do this OUTSIDE app_context)
-    from app.services.game.schedulerService import SchedulerService
-    SchedulerService.initialize_scheduler()
+    # DON'T initialize scheduler here - it will be done in gunicorn_config.py post_fork hook
 
     return app
