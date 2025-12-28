@@ -154,13 +154,21 @@ class PropService:
         if winner_loser_props:
             for prop in winner_loser_props:
                 print(prop.correct_answer)
-                result.append({'prop_id': prop.id, 'correct_answer': prop.correct_answer})
+                result.append({
+                    'prop_id': prop.id,
+                    'prop_type': 'winner_loser',
+                    'correct_answer': prop.correct_answer
+                })
 
         # For over_under_props
         if over_under_props:
             for prop in over_under_props:
                 print(prop.correct_answer)
-                result.append({'prop_id': prop.id, 'correct_answer': prop.correct_answer})
+                result.append({
+                    'prop_id': prop.id,
+                    'prop_type': 'over_under',
+                    'correct_answer': prop.correct_answer
+                })
 
         if variable_option_props:
             for prop in variable_option_props:
@@ -168,7 +176,11 @@ class PropService:
 
                 if prop.correct_answer:
                     for answer in prop.correct_answer:
-                        result.append({'prop_id': prop.id, 'correct_answer': answer})
+                        result.append({
+                            'prop_id': prop.id,
+                            'prop_type': 'variable_option',
+                            'correct_answer': answer
+                        })
 
         return result
 
