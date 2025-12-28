@@ -115,6 +115,30 @@ class ESPNClientService:
             return {}
 
     @staticmethod
+    def get_team_names(game_data: Dict[str, Any]) -> Dict[str, str]:
+        """
+        Extract team abbreviations to full team names mapping from ESPN game data.
+
+        Args:
+            game_data (dict): The game data returned from get_game_data().
+
+        Returns:
+            dict: Dictionary with team abbreviations as keys and full names as values.
+                  Example: {"JAX": "Jacksonville Jaguars", "IND": "Indianapolis Colts"}
+        """
+        try:
+            competitors = game_data.get("header", {}).get("competitions", [{}])[0].get("competitors", [])
+            team_names = {}
+            for team in competitors:
+                team_id = team.get("team", {}).get("abbreviation")
+                team_name = team.get("team", {}).get("displayName")
+                if team_id and team_name:
+                    team_names[team_id] = team_name
+            return team_names
+        except (IndexError, KeyError, TypeError):
+            return {}
+
+    @staticmethod
     def get_winning_team_id(game_data: Dict[str, Any]) -> Optional[str]:
         """
         Determine the winning team ID from completed game data.

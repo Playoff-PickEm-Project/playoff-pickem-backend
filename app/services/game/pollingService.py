@@ -81,11 +81,32 @@ class PollingService:
         # Update game-level scores
         scores = ESPNClientService.get_team_scores(game_data)
         if scores:
-            # Assuming team_a and team_b are first and second in the scores dict
-            team_ids = list(scores.keys())
-            if len(team_ids) >= 2:
-                game.team_a_score = scores.get(team_ids[0], 0)
-                game.team_b_score = scores.get(team_ids[1], 0)
+            # Get full team names from ESPN to match with our team_a_name/team_b_name
+            team_names_map = ESPNClientService.get_team_names(game_data)
+
+            # Try to match scores to team_a and team_b based on winner/loser prop team names
+            if game.winner_loser_props:
+                prop = game.winner_loser_props[0]  # Use first winner/loser prop as reference
+                if prop.team_a_name and prop.team_b_name:
+                    # Match team names to ESPN team IDs
+                    for team_id, score in scores.items():
+                        team_full_name = team_names_map.get(team_id, "")
+                        if prop.team_a_name in team_full_name or team_full_name in prop.team_a_name:
+                            game.team_a_score = score
+                        elif prop.team_b_name in team_full_name or team_full_name in prop.team_b_name:
+                            game.team_b_score = score
+                else:
+                    # Fallback: just assign in order
+                    team_ids = list(scores.keys())
+                    if len(team_ids) >= 2:
+                        game.team_a_score = scores.get(team_ids[0], 0)
+                        game.team_b_score = scores.get(team_ids[1], 0)
+            else:
+                # No winner/loser props, just assign in order
+                team_ids = list(scores.keys())
+                if len(team_ids) >= 2:
+                    game.team_a_score = scores.get(team_ids[0], 0)
+                    game.team_b_score = scores.get(team_ids[1], 0)
 
         # Update Over/Under props
         PollingService._update_over_under_props(game, game_data)
