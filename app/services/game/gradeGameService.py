@@ -56,13 +56,13 @@ class GradeGameService:
             # Only auto-grade if we have team scores
             if prop.team_a_score is not None and prop.team_b_score is not None:
                 if prop.team_a_score > prop.team_b_score:
-                    # Team A won - set correct_answer to whichever team is team_a
-                    prop.correct_answer = prop.favorite_team if prop.team_a_id == prop.favorite_team else prop.underdog_team
+                    # Team A won - set correct_answer to team_a_name
+                    prop.correct_answer = prop.team_a_name
                 elif prop.team_b_score > prop.team_a_score:
-                    # Team B won
-                    prop.correct_answer = prop.favorite_team if prop.team_b_id == prop.favorite_team else prop.underdog_team
+                    # Team B won - set correct_answer to team_b_name
+                    prop.correct_answer = prop.team_b_name
                 # If scores are equal, it's a tie - leave correct_answer as None
-                print(f"Auto-graded W/L prop {prop.id}: {prop.correct_answer}")
+                print(f"Auto-graded W/L prop {prop.id}: {prop.correct_answer} (score: {prop.team_a_score}-{prop.team_b_score})")
 
         db.session.commit()
 
