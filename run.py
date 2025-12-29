@@ -31,5 +31,14 @@ app.register_blueprint(gameController)
 app.register_blueprint(propController)
 app.register_blueprint(liveStatsController)
 
+# Initialize scheduler for local development
 if __name__ == "__main__":
+    from app.services.game.schedulerService import SchedulerService
+    print("Initializing APScheduler for local development...")
+    try:
+        SchedulerService.initialize_scheduler(app)
+        print("APScheduler initialized successfully")
+    except Exception as e:
+        print(f"Failed to initialize scheduler: {e}")
+
     app.run(debug=True)
