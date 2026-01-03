@@ -57,6 +57,7 @@ class Game(db.Model):
             'id': self.id,
             'game_name': self.game_name,
             'start_time': self.start_time,
+            'graded': self.graded,
             'external_game_id': self.external_game_id,
             'is_polling': self.is_polling,
             'is_completed': self.is_completed,
