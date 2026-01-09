@@ -509,3 +509,209 @@ class GameService:
 
         # Return the list of all picks (player names and their answers)
         return picks
+
+    @staticmethod
+    def add_winner_loser_prop(data):
+        """
+        Add a new Winner/Loser prop to an existing game.
+
+        Creates a new winner/loser prop with the provided data and associates it
+        with the specified game.
+
+        Args:
+            data (dict): Dictionary containing:
+                - game_id (int): The ID of the game to add the prop to
+                - question (str): The prop question text
+                - favorite_team (str): Name of the favorite team
+                - underdog_team (str): Name of the underdog team
+                - favorite_points (float): Points awarded for picking favorite
+                - underdog_points (float): Points awarded for picking underdog
+                - favorite_team_id (str, optional): ESPN team ID for favorite
+                - underdog_team_id (str, optional): ESPN team ID for underdog
+
+        Returns:
+            dict: Success message with the newly created prop's ID
+
+        Raises:
+            400: If validation fails for game_id
+            404: If the game doesn't exist
+        """
+        game_id = validate_game_id(data.get('game_id'))
+        game = get_game_by_id(game_id)
+        validate_game_exists(game)
+
+        new_prop = WinnerLoserProp(
+            game_id=game_id,
+            question=data.get('question'),
+            favorite_points=data.get('favorite_points'),
+            underdog_points=data.get('underdog_points'),
+            favorite_team=data.get('favorite_team'),
+            underdog_team=data.get('underdog_team'),
+            team_a_id=data.get('favorite_team_id'),
+            team_b_id=data.get('underdog_team_id'),
+            team_a_name=data.get('favorite_team'),
+            team_b_name=data.get('underdog_team')
+        )
+
+        game.winner_loser_props.append(new_prop)
+        db.session.add(new_prop)
+        db.session.commit()
+
+        return {"message": "Winner/Loser prop added successfully.", "prop_id": new_prop.id}
+
+    @staticmethod
+    def add_over_under_prop(data):
+        """
+        Add a new Over/Under prop to an existing game.
+
+        Creates a new over/under prop with the provided data and associates it
+        with the specified game. Optionally supports player stat tracking for live updates.
+
+        Args:
+            data (dict): Dictionary containing:
+                - game_id (int): The ID of the game to add the prop to
+                - question (str): The prop question text
+                - over_points (float): Points awarded for picking over
+                - under_points (float): Points awarded for picking under
+                - player_name (str, optional): Name of player for stat tracking
+                - player_id (str, optional): ESPN player ID for live stat tracking
+                - stat_type (str, optional): Type of stat to track (e.g., "passing_yards")
+                - line_value (float, optional): The over/under line value
+
+        Returns:
+            dict: Success message with the newly created prop's ID
+
+        Raises:
+            400: If validation fails for game_id
+            404: If the game doesn't exist
+        """
+        game_id = validate_game_id(data.get('game_id'))
+        game = get_game_by_id(game_id)
+        validate_game_exists(game)
+
+        new_prop = OverUnderProp(
+            game_id=game_id,
+            question=data.get('question'),
+            over_points=data.get('over_points'),
+            under_points=data.get('under_points'),
+            player_name=data.get('player_name'),
+            player_id=data.get('player_id'),
+            stat_type=data.get('stat_type'),
+            line_value=data.get('line_value')
+        )
+
+        game.over_under_props.append(new_prop)
+        db.session.add(new_prop)
+        db.session.commit()
+
+        return {"message": "Over/Under prop added successfully.", "prop_id": new_prop.id}
+
+    @staticmethod
+    def add_variable_option_prop(data):
+        """
+        Add a new Variable Option (multiple choice) prop to an existing game.
+
+        Creates a new variable option prop with multiple answer choices and their
+        respective point values.
+
+        Args:
+            data (dict): Dictionary containing:
+                - game_id (int): The ID of the game to add the prop to
+                - question (str): The prop question text
+                - options (list): List of option dicts with 'choice_text' and 'points'
+                    Example: [{"choice_text": "Option A", "points": 1.0}, ...]
+
+        Returns:
+            dict: Success message with the newly created prop's ID
+
+        Raises:
+            400: If validation fails for game_id
+            404: If the game doesn't exist
+        """
+        game_id = validate_game_id(data.get('game_id'))
+        game = get_game_by_id(game_id)
+        validate_game_exists(game)
+
+        new_prop = VariableOptionProp(
+            game_id=game_id,
+            question=data.get('question'),
+        )
+
+        new_prop.options = []
+        game.variable_option_props.append(new_prop)
+
+        # Create option choices
+        options = data.get('options', [])
+        for option in options:
+            new_choice = HashMapAnswers(
+                answer_choice=option.get('choice_text'),
+                answer_points=option.get('points')
+            )
+            db.session.add(new_choice)
+            new_prop.options.append(new_choice)
+
+        db.session.add(new_prop)
+        db.session.commit()
+
+        return {"message": "Variable Option prop added successfully.", "prop_id": new_prop.id}
+
+    @staticmethod
+    def delete_prop(data):
+        """
+        Delete a specific prop from a game.
+
+        Removes the prop and all associated player answers. Works for all three
+        prop types: Winner/Loser, Over/Under, and Variable Option.
+
+        Args:
+            data (dict): Dictionary containing:
+                - prop_id (int): The ID of the prop to delete
+                - prop_type (str): Type of prop - "winner_loser", "over_under", or "variable_option"
+
+        Returns:
+            dict: Success message
+
+        Raises:
+            400: If validation fails for prop_id or invalid prop_type
+            404: If the prop doesn't exist
+        """
+        prop_id = validate_prop_id(data.get('prop_id'))
+        prop_type = data.get('prop_type')
+
+        if prop_type == 'winner_loser':
+            prop = get_winner_loser_prop_by_id(prop_id)
+            if not prop:
+                abort(404, "Winner/Loser prop not found")
+
+            # Delete all associated answers
+            WinnerLoserAnswer.query.filter_by(prop_id=prop_id).delete()
+            db.session.delete(prop)
+
+        elif prop_type == 'over_under':
+            prop = get_over_under_prop_by_id(prop_id)
+            if not prop:
+                abort(404, "Over/Under prop not found")
+
+            # Delete all associated answers
+            OverUnderAnswer.query.filter_by(prop_id=prop_id).delete()
+            db.session.delete(prop)
+
+        elif prop_type == 'variable_option':
+            prop = get_variable_option_prop_by_id(prop_id)
+            if not prop:
+                abort(404, "Variable Option prop not found")
+
+            # Delete all associated answers
+            VariableOptionAnswer.query.filter_by(prop_id=prop_id).delete()
+
+            # Delete all associated option choices
+            for option in prop.options:
+                db.session.delete(option)
+
+            db.session.delete(prop)
+        else:
+            abort(400, "Invalid prop_type. Must be 'winner_loser', 'over_under', or 'variable_option'")
+
+        db.session.commit()
+
+        return {"message": f"{prop_type.replace('_', ' ').title()} prop deleted successfully."}

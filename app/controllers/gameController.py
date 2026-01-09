@@ -169,6 +169,85 @@ def deleteGame():
 
     return jsonify(result)
 
+@gameController.route('/add_winner_loser_prop', methods=['POST'])
+def addWinnerLoserProp():
+    """
+    Add a new Winner/Loser prop to an existing game.
+
+    Expects JSON body with:
+        - game_id (int): The ID of the game to add the prop to
+        - question (str): The prop question text
+        - favorite_team (str): Name of the favorite team
+        - underdog_team (str): Name of the underdog team
+        - favorite_points (float): Points awarded for picking favorite
+        - underdog_points (float): Points awarded for picking underdog
+
+    Returns:
+        JSON: Success response with the newly created prop's ID
+    """
+    data = request.get_json()
+    result = GameService.add_winner_loser_prop(data)
+    return jsonify(result)
+
+@gameController.route('/add_over_under_prop', methods=['POST'])
+def addOverUnderProp():
+    """
+    Add a new Over/Under prop to an existing game.
+
+    Expects JSON body with:
+        - game_id (int): The ID of the game to add the prop to
+        - question (str): The prop question text
+        - over_points (float): Points awarded for picking over
+        - under_points (float): Points awarded for picking under
+        - player_name (str, optional): Name of player for stat tracking
+        - player_id (str, optional): ESPN player ID for live stat tracking
+        - stat_type (str, optional): Type of stat to track (e.g., "passing_yards")
+        - line_value (float, optional): The over/under line value
+
+    Returns:
+        JSON: Success response with the newly created prop's ID
+    """
+    data = request.get_json()
+    result = GameService.add_over_under_prop(data)
+    return jsonify(result)
+
+@gameController.route('/add_variable_option_prop', methods=['POST'])
+def addVariableOptionProp():
+    """
+    Add a new Variable Option (multiple choice) prop to an existing game.
+
+    Expects JSON body with:
+        - game_id (int): The ID of the game to add the prop to
+        - question (str): The prop question text
+        - options (list): List of option objects with 'choice_text' and 'points'
+            Example: [{"choice_text": "Option A", "points": 1.0}, ...]
+
+    Returns:
+        JSON: Success response with the newly created prop's ID
+    """
+    data = request.get_json()
+    result = GameService.add_variable_option_prop(data)
+    return jsonify(result)
+
+@gameController.route('/delete_prop', methods=['POST'])
+def deleteProp():
+    """
+    Delete a specific prop from a game.
+
+    Works for all prop types (Winner/Loser, Over/Under, Variable Option).
+    Also deletes all associated player answers.
+
+    Expects JSON body with:
+        - prop_id (int): The ID of the prop to delete
+        - prop_type (str): Type of prop - "winner_loser", "over_under", or "variable_option"
+
+    Returns:
+        JSON: Success response
+    """
+    data = request.get_json()
+    result = GameService.delete_prop(data)
+    return jsonify(result)
+
 @gameController.route('/view_all_answers_for_game', methods=['GET'])
 def getAllPicksFromGame():
     """
