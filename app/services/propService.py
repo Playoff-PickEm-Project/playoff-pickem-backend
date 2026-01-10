@@ -214,20 +214,18 @@ class PropService:
         prop = get_winner_loser_prop_by_id(prop_id)
         validate_prop_exists(prop)
 
-        # Update team names if provided
-        if favorite_team is not None:
-            prop.favorite_team = favorite_team
-        if underdog_team is not None:
-            prop.underdog_team = underdog_team
-
-        if (favoritePoints > underdogPoints):
-            fav_team_tmp = prop.favorite_team
-            prop.favorite_team = prop.underdog_team
-            prop.underdog_team = fav_team_tmp
-
+        # Update question and points
         prop.question = question
         prop.favorite_points = favoritePoints
         prop.underdog_points = underdogPoints
+
+        # Update team names if provided
+        if favorite_team is not None:
+            prop.favorite_team = favorite_team
+            prop.team_a_name = favorite_team  # Also update team_a for live stats
+        if underdog_team is not None:
+            prop.underdog_team = underdog_team
+            prop.team_b_name = underdog_team  # Also update team_b for live stats
 
         db.session.commit()
 
