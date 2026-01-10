@@ -185,18 +185,21 @@ class PropService:
         return result
 
     @staticmethod
-    def edit_winner_loser_prop(prop_id, question, favoritePoints, underdogPoints):
+    def edit_winner_loser_prop(prop_id, question, favoritePoints, underdogPoints, favorite_team=None, underdog_team=None):
         """
-        Edit a winner/loser prop's question and point values.
+        Edit a winner/loser prop's question, point values, and team names.
 
-        Updates the prop's question, favorite points, and underdog points. If favoritePoints
-        exceeds underdogPoints, the favorite and underdog teams are swapped.
+        Updates the prop's question, favorite points, underdog points, and optionally
+        the team names. If favoritePoints exceeds underdogPoints, the favorite and
+        underdog teams are swapped.
 
         Args:
             prop_id (int): The unique identifier of the prop to edit.
             question (str): The new question text.
             favoritePoints (int): The points awarded for picking the favorite.
             underdogPoints (int): The points awarded for picking the underdog.
+            favorite_team (str, optional): The favorite team name.
+            underdog_team (str, optional): The underdog team name.
 
         Returns:
             None
@@ -211,6 +214,12 @@ class PropService:
         prop = get_winner_loser_prop_by_id(prop_id)
         validate_prop_exists(prop)
 
+        # Update team names if provided
+        if favorite_team is not None:
+            prop.favorite_team = favorite_team
+        if underdog_team is not None:
+            prop.underdog_team = underdog_team
+
         if (favoritePoints > underdogPoints):
             fav_team_tmp = prop.favorite_team
             prop.favorite_team = prop.underdog_team
@@ -223,17 +232,22 @@ class PropService:
         db.session.commit()
 
     @staticmethod
-    def edit_over_under_prop(prop_id, question, overPoints, underPoints):
+    def edit_over_under_prop(prop_id, question, overPoints, underPoints, player_name=None, player_id=None, stat_type=None, line_value=None):
         """
-        Edit an over/under prop's question and point values.
+        Edit an over/under prop's question, point values, and player information.
 
-        Updates the prop's question, over points, and under points.
+        Updates the prop's question, over points, under points, and optionally
+        player information for ESPN-tracked props.
 
         Args:
             prop_id (int): The unique identifier of the prop to edit.
             question (str): The new question text.
             overPoints (int): The points awarded for picking over.
             underPoints (int): The points awarded for picking under.
+            player_name (str, optional): The player's name for ESPN tracking.
+            player_id (str, optional): The ESPN player ID.
+            stat_type (str, optional): The stat type (e.g., "passing_yards").
+            line_value (float, optional): The over/under line value.
 
         Returns:
             None
@@ -251,5 +265,60 @@ class PropService:
         prop.question = question
         prop.over_points = overPoints
         prop.under_points = underPoints
+
+        # Update ESPN-related fields if provided
+        if player_name is not None:
+            prop.player_name = player_name
+        if player_id is not None:
+            prop.player_id = player_id
+        if stat_type is not None:
+            prop.stat_type = stat_type
+        if line_value is not None:
+            prop.line_value = line_value
+
+        db.session.commit()
+
+    @staticmethod
+    def edit_variable_option_prop(prop_id, question, options):
+        """
+        Edit a variable option prop's question and options.
+
+        Updates the prop's question and recreates all options with new values.
+
+        Args:
+            prop_id (int): The unique identifier of the prop to edit.
+            question (str): The new question text.
+            options (list): List of option dictionaries with 'answer_choice' and 'answer_points'.
+
+        Returns:
+            None
+
+        Raises:
+            400: If validation fails for prop_id or question.
+            404: If the prop doesn't exist.
+        """
+        from app.models.props.variableOptionPropOption import VariableOptionPropOption
+
+        prop_id = validate_prop_id(prop_id)
+        question = validate_question(question)
+
+        prop = get_variable_option_prop_by_id(prop_id)
+        validate_prop_exists(prop)
+
+        prop.question = question
+
+        # Delete existing options
+        for option in prop.options:
+            db.session.delete(option)
+
+        # Create new options
+        for opt_data in options:
+            new_option = VariableOptionPropOption(
+                prop_id=prop_id,
+                answer_choice=opt_data.get('answer_choice'),
+                answer_points=opt_data.get('answer_points')
+            )
+            db.session.add(new_option)
+            prop.options.append(new_option)
 
         db.session.commit()

@@ -158,13 +158,15 @@ def getCorrectPropAnswers():
 @propController.route("/update_winner_loser_prop", methods=['POST'])
 def updateWinnerLoserProp():
     """
-    Edit a winner/loser prop's question and point values.
+    Edit a winner/loser prop's question, point values, and team names.
 
     Expects JSON body with:
         - prop_id (int): The ID of the prop to edit
         - question (str): The new question text
         - favorite_points (int): Points for picking the favorite
         - underdog_points (int): Points for picking the underdog
+        - favorite_team (str, optional): The favorite team name
+        - underdog_team (str, optional): The underdog team name
 
     Returns:
         JSON: Success message
@@ -175,21 +177,27 @@ def updateWinnerLoserProp():
     question = data.get('question')
     favoritePoints = data.get('favorite_points')
     underdogPoints = data.get('underdog_points')
+    favorite_team = data.get('favorite_team')
+    underdog_team = data.get('underdog_team')
 
-    PropService.edit_winner_loser_prop(prop_id, question, favoritePoints, underdogPoints)
+    PropService.edit_winner_loser_prop(prop_id, question, favoritePoints, underdogPoints, favorite_team, underdog_team)
 
     return {"Message": "Successfully edited prop."}
 
 @propController.route("/update_over_under_prop", methods=['POST'])
 def updateOverUnderProp():
     """
-    Edit an over/under prop's question and point values.
+    Edit an over/under prop's question, point values, and player information.
 
     Expects JSON body with:
         - prop_id (int): The ID of the prop to edit
         - question (str): The new question text
         - over_points (int): Points for picking over
         - under_points (int): Points for picking under
+        - player_name (str, optional): The player's name for ESPN tracking
+        - player_id (str, optional): The ESPN player ID
+        - stat_type (str, optional): The stat type (e.g., "passing_yards")
+        - line_value (float, optional): The over/under line value
 
     Returns:
         JSON: Success message
@@ -200,8 +208,35 @@ def updateOverUnderProp():
     question = data.get('question')
     overPoints = data.get('over_points')
     underPoints = data.get('under_points')
+    player_name = data.get('player_name')
+    player_id = data.get('player_id')
+    stat_type = data.get('stat_type')
+    line_value = data.get('line_value')
 
-    PropService.edit_over_under_prop(prop_id, question, overPoints, underPoints)
+    PropService.edit_over_under_prop(prop_id, question, overPoints, underPoints, player_name, player_id, stat_type, line_value)
+
+    return {"Message": "Successfully edited prop."}
+
+@propController.route("/update_variable_option_prop", methods=['POST'])
+def updateVariableOptionProp():
+    """
+    Edit a variable option prop's question and options.
+
+    Expects JSON body with:
+        - prop_id (int): The ID of the prop to edit
+        - question (str): The new question text
+        - options (list): List of options with 'answer_choice' and 'answer_points'
+
+    Returns:
+        JSON: Success message
+    """
+    data = request.get_json()
+
+    prop_id = data.get('prop_id')
+    question = data.get('question')
+    options = data.get('options')
+
+    PropService.edit_variable_option_prop(prop_id, question, options)
 
     return {"Message": "Successfully edited prop."}
 
