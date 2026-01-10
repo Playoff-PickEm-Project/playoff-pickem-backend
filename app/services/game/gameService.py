@@ -715,3 +715,47 @@ class GameService:
         db.session.commit()
 
         return {"message": f"{prop_type.replace('_', ' ').title()} prop deleted successfully."}
+
+    @staticmethod
+    def update_game(data):
+        """
+        Update game metadata (name, start time, external game ID).
+
+        Allows commissioners to modify game details after creation.
+
+        Args:
+            data (dict): Dictionary containing:
+                - game_id (int): The ID of the game to update
+                - game_name (str, optional): New game name
+                - start_time (str, optional): New start time (ISO format string)
+                - external_game_id (str, optional): New ESPN game ID for live polling
+
+        Returns:
+            dict: Success message
+
+        Raises:
+            400: If validation fails for game_id
+            404: If the game doesn't exist
+        """
+        from datetime import datetime
+
+        game_id = validate_game_id(data.get('game_id'))
+        game = get_game_by_id(game_id)
+        validate_game_exists(game)
+
+        # Update game name if provided
+        if 'game_name' in data and data['game_name']:
+            game.game_name = data['game_name']
+
+        # Update start time if provided
+        if 'start_time' in data and data['start_time']:
+            # Parse ISO format datetime string
+            game.start_time = datetime.fromisoformat(data['start_time'].replace('Z', '+00:00'))
+
+        # Update external game ID if provided
+        if 'external_game_id' in data:
+            game.external_game_id = data['external_game_id'] if data['external_game_id'] else None
+
+        db.session.commit()
+
+        return {"message": "Game updated successfully."}

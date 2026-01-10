@@ -248,6 +248,24 @@ def deleteProp():
     result = GameService.delete_prop(data)
     return jsonify(result)
 
+@gameController.route('/update_game', methods=['POST'])
+def updateGame():
+    """
+    Update game metadata (name, start time, external game ID).
+
+    Expects JSON body with:
+        - game_id (int): The ID of the game to update
+        - game_name (str, optional): New game name
+        - start_time (str, optional): New start time (ISO format)
+        - external_game_id (str, optional): New ESPN game ID
+
+    Returns:
+        JSON: Success response with message
+    """
+    data = request.get_json()
+    result = GameService.update_game(data)
+    return jsonify(result)
+
 @gameController.route('/view_all_answers_for_game', methods=['GET'])
 def getAllPicksFromGame():
     """
