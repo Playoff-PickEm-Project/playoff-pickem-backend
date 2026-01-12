@@ -173,12 +173,24 @@ class ESPNClientService:
                 - "passing_yards", "passing_tds", "passing_interceptions", "passing_completions"
                 - "rushing_yards", "rushing_tds"
                 - "receiving_yards", "receiving_tds", "receiving_receptions"
+                - "scrimmage_yards" (rushing_yards + receiving_yards)
 
         Returns:
             float: The stat value for the player.
             None: If player or stat is not found.
         """
         try:
+            # Handle scrimmage_yards as a special case (rush + rec)
+            if stat_type == "scrimmage_yards":
+                rushing = ESPNClientService.get_player_stats(game_data, player_name, "rushing_yards")
+                receiving = ESPNClientService.get_player_stats(game_data, player_name, "receiving_yards")
+
+                # If both are None, return None (player not found)
+                if rushing is None and receiving is None:
+                    return None
+                # Otherwise add them (treating None as 0)
+                return (rushing or 0) + (receiving or 0)
+
             # Map our stat types to ESPN's stat category names
             stat_category_map = {
                 "passing_yards": ("passing", "passingYards"),
