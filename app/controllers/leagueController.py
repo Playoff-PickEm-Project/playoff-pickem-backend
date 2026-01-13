@@ -153,11 +153,12 @@ def createGame():
     gameName = data.get('gameName')
     date = data.get('date')
     externalGameId = data.get('externalGameId')  # ESPN game ID
+    propLimit = data.get('propLimit', 2)  # Default to 2 if not provided
     winnerLoserQuestions = data.get('winnerLoserQuestions')
     overUnderQuestions = data.get('overUnderQuestions')
     variableOptionQuestions = data.get('variableOptionQuestions')
 
-    result = GameService.create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions, externalGameId)
+    result = GameService.create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions, externalGameId, propLimit)
 
     return jsonify(result)
 
@@ -195,5 +196,27 @@ def getLeagueByName():
 
     if result is None:
         return {"Message": "idk"}
+
+    return jsonify(result.to_dict())
+
+@leagueController.route('/get_player_by_username_and_leaguename', methods=['GET'])
+def getPlayerByUsernameAndLeaguename():
+    """
+    Get a player by username and league name.
+
+    Query Parameters:
+        - username (str): The player's username
+        - leagueName (str): The league name
+
+    Returns:
+        JSON: Player object with id, name, league_id, user_id, points
+    """
+    username = request.args.get('username')
+    leagueName = request.args.get('leagueName')
+
+    result = PlayerService.get_player_by_username_and_leaguename(username, leagueName)
+
+    if result is None:
+        return jsonify({"error": "Player not found"}), 404
 
     return jsonify(result.to_dict())

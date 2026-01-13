@@ -260,3 +260,98 @@ def saveNewPoints():
     PlayerService.edit_points(player_id, new_points)
 
     return {"Message": "New points saved successfully."}
+
+@propController.route("/get_player_selected_props", methods=['GET'])
+def get_player_selected_props():
+    """
+    Get all props a player has selected to answer for a specific game.
+
+    Query Parameters:
+        - player_id (int): The player's ID
+        - game_id (int): The game's ID
+
+    Returns:
+        JSON: List of selected props with their details
+    """
+    player_id = request.args.get('player_id', type=int)
+    game_id = request.args.get('game_id', type=int)
+
+    selections = PropService.get_player_selected_props(player_id, game_id)
+
+    return jsonify([selection.to_dict() for selection in selections])
+
+@propController.route("/select_prop", methods=['POST'])
+def select_prop():
+    """
+    Allow a player to select a prop they want to answer for a game.
+
+    Request Body:
+        - player_id (int): The player's ID
+        - game_id (int): The game's ID
+        - prop_type (str): 'winner_loser', 'over_under', or 'variable_option'
+        - prop_id (int): The prop's ID
+
+    Returns:
+        JSON: The created selection object
+    """
+    try:
+        data = request.get_json()
+
+        player_id = data.get('player_id')
+        game_id = data.get('game_id')
+        prop_type = data.get('prop_type')
+        prop_id = data.get('prop_id')
+
+        print(f"DEBUG: Selecting prop - player_id={player_id}, game_id={game_id}, prop_type={prop_type}, prop_id={prop_id}")
+
+        selection = PropService.select_prop_for_player(player_id, game_id, prop_type, prop_id)
+
+        return jsonify({
+            "message": "Prop selected successfully",
+            "selection": selection.to_dict()
+        }), 201
+    except Exception as e:
+        print(f"ERROR in select_prop: {str(e)}")
+        return jsonify({"description": str(e)}), 400
+
+@propController.route("/deselect_prop/<int:selection_id>", methods=['DELETE'])
+def deselect_prop(selection_id):
+    """
+    Allow a player to deselect a prop they previously selected.
+
+    Path Parameters:
+        - selection_id (int): The PlayerPropSelection ID
+
+    Request Body:
+        - player_id (int): The player's ID (for authorization)
+
+    Returns:
+        JSON: Success message
+    """
+    data = request.get_json()
+    player_id = data.get('player_id')
+
+    PropService.deselect_prop_for_player(selection_id, player_id)
+
+    return jsonify({"message": "Prop deselected successfully"}), 200
+
+@propController.route("/reset_player_selections", methods=['POST'])
+def reset_player_selections():
+    """
+    Remove all prop selections for a player for a specific game.
+
+    Request Body:
+        - player_id (int): The player's ID
+        - game_id (int): The game's ID
+
+    Returns:
+        JSON: Success message
+    """
+    data = request.get_json()
+
+    player_id = data.get('player_id')
+    game_id = data.get('game_id')
+
+    PropService.reset_player_selections_for_game(player_id, game_id)
+
+    return jsonify({"message": "All prop selections reset successfully"}), 200

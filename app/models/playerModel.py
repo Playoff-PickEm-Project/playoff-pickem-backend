@@ -31,10 +31,13 @@ class Player(db.Model):
     points = db.Column(db.Numeric)
     
     # These three fields represent the answers this player holds for the three types of questions. Note that this is the one side of a one to many
-    # relationship, signified by "db.relationship". 
+    # relationship, signified by "db.relationship".
     player_winner_loser_answers = db.relationship('WinnerLoserAnswer', foreign_keys=[WinnerLoserAnswer.player_id])
     player_over_under_answers = db.relationship('OverUnderAnswer', foreign_keys=[OverUnderAnswer.player_id])
     player_variable_option_answers = db.relationship('VariableOptionAnswer', foreign_keys=[VariableOptionAnswer.player_id])
+
+    # Tracks which props this player has selected to answer (new feature)
+    prop_selections = db.relationship('PlayerPropSelection', back_populates='player', cascade='all, delete-orphan')
     
     def to_dict(self):
         return {

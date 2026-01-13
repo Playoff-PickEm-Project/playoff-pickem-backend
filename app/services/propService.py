@@ -3,7 +3,14 @@ from app import db
 from app.repositories.leagueRepository import get_league_by_name
 from app.repositories.playerRepository import get_player_by_id, get_player_by_username_and_leaguename
 from app.repositories.gameRepository import get_game_by_id
-from app.repositories.propRepository import get_all_variable_option_props_for_game, get_all_winner_loser_props_for_game, get_all_over_under_props_for_game, get_over_under_answers_for_prop, get_winner_loser_answers_for_prop, get_winner_loser_prop_by_id, get_over_under_prop_by_id
+from app.repositories.propRepository import (
+    get_all_variable_option_props_for_game, get_all_winner_loser_props_for_game,
+    get_all_over_under_props_for_game, get_over_under_answers_for_prop,
+    get_winner_loser_answers_for_prop, get_winner_loser_prop_by_id, get_over_under_prop_by_id,
+    get_player_prop_selections_for_game, get_player_prop_selection_count,
+    create_player_prop_selection, delete_player_prop_selection,
+    check_prop_already_selected, delete_all_player_selections_for_game
+)
 from app.validators.leagueValidator import validate_league_name, validate_league_exists, validate_player_exists
 from app.validators.userValidator import validate_username
 from app.validators.gameValidator import validate_game_exists, validate_game_id
@@ -320,3 +327,197 @@ class PropService:
             prop.options.append(new_option)
 
         db.session.commit()
+
+    @staticmethod
+    def get_player_selected_props(player_id, game_id):
+        """
+        Get all props a player has selected to answer for a game.
+
+        Args:
+            player_id (int): The player's ID.
+            game_id (int): The game's ID.
+
+        Returns:
+            list: A list of PlayerPropSelection objects.
+
+        Raises:
+            400: If validation fails.
+            404: If game or player doesn't exist.
+        """
+        game_id = validate_game_id(game_id)
+        game = get_game_by_id(game_id)
+        validate_game_exists(game)
+
+        player = get_player_by_id(player_id)
+        validate_player_exists(player)
+
+        return get_player_prop_selections_for_game(player_id, game_id)
+
+    @staticmethod
+    def select_prop_for_player(player_id, game_id, prop_type, prop_id):
+        """
+        Allow a player to select a prop they want to answer for a game.
+
+        Validates that:
+        - The game exists
+        - The player exists
+        - The prop exists and belongs to the game
+        - The prop is not mandatory (mandatory props cannot be manually selected)
+        - The player hasn't exceeded their prop_limit for OPTIONAL props
+        - The player hasn't already selected this prop
+
+        Args:
+            player_id (int): The player's ID.
+            game_id (int): The game's ID.
+            prop_type (str): Type of prop ('winner_loser', 'over_under', 'variable_option').
+            prop_id (int): The prop's ID.
+
+        Returns:
+            PlayerPropSelection: The created selection object.
+
+        Raises:
+            400: If validation fails or limits are exceeded.
+            404: If game, player, or prop doesn't exist.
+        """
+        # Validate game and player
+        game_id = validate_game_id(game_id)
+        game = get_game_by_id(game_id)
+        validate_game_exists(game)
+
+        player = get_player_by_id(player_id)
+        validate_player_exists(player)
+
+        # Validate prop type
+        if prop_type not in ['winner_loser', 'over_under', 'variable_option']:
+            abort(400, description="Invalid prop_type. Must be 'winner_loser', 'over_under', or 'variable_option'.")
+
+        # Validate prop exists and belongs to this game
+        prop = None
+        if prop_type == 'winner_loser':
+            prop = get_winner_loser_prop_by_id(prop_id)
+        elif prop_type == 'over_under':
+            prop = get_over_under_prop_by_id(prop_id)
+        elif prop_type == 'variable_option':
+            from app.repositories.propRepository import get_variable_option_prop_by_id
+            prop = get_variable_option_prop_by_id(prop_id)
+
+        validate_prop_exists(prop)
+
+        # Ensure game_id is an integer for comparison (frontend might send as string)
+        if int(prop.game_id) != int(game_id):
+            abort(400, description=f"This prop does not belong to the specified game.")
+
+        # Check if prop is mandatory (mandatory props cannot be manually selected/deselected)
+        if prop.is_mandatory:
+            abort(400, description="Mandatory props cannot be manually selected. They are automatically required.")
+
+        # Check if player has already selected this prop
+        if check_prop_already_selected(player_id, game_id, prop_type, prop_id):
+            abort(400, description="You have already selected this prop.")
+
+        # Count only OPTIONAL prop selections (mandatory props don't count toward limit)
+        current_selections = get_player_prop_selections_for_game(player_id, game_id)
+        optional_count = sum(1 for s in current_selections if not PropService._is_prop_mandatory(s.prop_type, s.prop_id))
+
+        if optional_count >= game.prop_limit:
+            abort(400, description=f"You have already selected {game.prop_limit} optional props for this game.")
+
+        # Create the selection
+        return create_player_prop_selection(player_id, game_id, prop_type, prop_id)
+
+    @staticmethod
+    def _is_prop_mandatory(prop_type, prop_id):
+        """Helper to check if a prop is mandatory."""
+        if prop_type == 'winner_loser':
+            prop = get_winner_loser_prop_by_id(prop_id)
+        elif prop_type == 'over_under':
+            prop = get_over_under_prop_by_id(prop_id)
+        elif prop_type == 'variable_option':
+            from app.repositories.propRepository import get_variable_option_prop_by_id
+            prop = get_variable_option_prop_by_id(prop_id)
+        else:
+            return False
+        return prop and prop.is_mandatory
+
+    @staticmethod
+    def deselect_prop_for_player(selection_id, player_id):
+        """
+        Allow a player to deselect a prop they previously selected.
+
+        Mandatory props cannot be deselected by players.
+
+        Args:
+            selection_id (int): The PlayerPropSelection ID.
+            player_id (int): The player's ID (for authorization).
+
+        Returns:
+            bool: True if successful.
+
+        Raises:
+            400: If trying to deselect a mandatory prop.
+            403: If selection doesn't belong to player.
+            404: If selection doesn't exist.
+        """
+        from app.models.playerPropSelection import PlayerPropSelection
+        selection = PlayerPropSelection.query.get(selection_id)
+
+        if not selection:
+            abort(404, description="Prop selection not found.")
+
+        if selection.player_id != player_id:
+            abort(403, description="You can only deselect your own prop selections.")
+
+        # Check if the prop is mandatory (players cannot deselect mandatory props)
+        if PropService._is_prop_mandatory(selection.prop_type, selection.prop_id):
+            abort(400, description="Mandatory props cannot be deselected.")
+
+        return delete_player_prop_selection(selection_id)
+
+    @staticmethod
+    def reset_player_selections_for_game(player_id, game_id):
+        """
+        Remove all prop selections for a player for a specific game.
+
+        Args:
+            player_id (int): The player's ID.
+            game_id (int): The game's ID.
+
+        Returns:
+            None
+
+        Raises:
+            400: If validation fails.
+            404: If game or player doesn't exist.
+        """
+        game_id = validate_game_id(game_id)
+        game = get_game_by_id(game_id)
+        validate_game_exists(game)
+
+        player = get_player_by_id(player_id)
+        validate_player_exists(player)
+
+        delete_all_player_selections_for_game(player_id, game_id)
+
+    @staticmethod
+    def validate_player_can_answer_prop(player_id, game_id, prop_type, prop_id):
+        """
+        Check if a player is allowed to answer a specific prop.
+
+        A player can answer a prop if they have selected it in their PlayerPropSelection.
+
+        Args:
+            player_id (int): The player's ID.
+            game_id (int): The game's ID.
+            prop_type (str): Type of prop.
+            prop_id (int): The prop's ID.
+
+        Returns:
+            bool: True if player can answer this prop.
+
+        Raises:
+            403: If player hasn't selected this prop.
+        """
+        if not check_prop_already_selected(player_id, game_id, prop_type, prop_id):
+            abort(403, description="You must select this prop before answering it.")
+
+        return True

@@ -300,6 +300,10 @@ class LeagueService:
         for game in league.league_games:
             LeagueService.delete_game(leagueName, game.id)
 
+        # Clear commissioner reference to avoid circular dependency
+        league.commissioner_id = None
+        db.session.flush()
+
         for player in league.league_players:
             LeagueService.delete_player(player.name, leagueName)
 

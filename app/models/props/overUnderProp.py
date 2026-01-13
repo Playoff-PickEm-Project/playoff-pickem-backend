@@ -28,6 +28,10 @@ class OverUnderProp(db.Model):
     # Current stat value (updated during polling)
     current_value = db.Column(db.Numeric, nullable=True)
 
+    # Whether this prop is mandatory (must be answered) or optional (player can choose)
+    # Over/Under props default to optional
+    is_mandatory = db.Column(db.Boolean, default=False, nullable=False)
+
     def to_dict(self):
         return {
             'prop_id': self.id,
@@ -41,4 +45,5 @@ class OverUnderProp(db.Model):
             'stat_type': self.stat_type,
             'line_value': float(self.line_value) if self.line_value is not None else None,
             'current_value': float(self.current_value) if self.current_value is not None else None,
+            'is_mandatory': self.is_mandatory,
         }
