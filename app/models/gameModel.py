@@ -52,6 +52,10 @@ class Game(db.Model):
     team_a_score = db.Column(db.Integer, nullable=True)
     team_b_score = db.Column(db.Integer, nullable=True)
 
+    # Number of props each player must select to answer for this game
+    # Defaults to 2 if not specified
+    prop_limit = db.Column(db.Integer, default=2, nullable=False)
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -63,6 +67,7 @@ class Game(db.Model):
             'is_completed': self.is_completed,
             'team_a_score': self.team_a_score,
             'team_b_score': self.team_b_score,
+            'prop_limit': self.prop_limit,
             'winner_loser_props': [prop.to_dict() for prop in self.winner_loser_props],
             'over_under_props': [prop.to_dict() for prop in self.over_under_props],
             'variable_option_props': [prop.to_dict() for prop in self.variable_option_props],

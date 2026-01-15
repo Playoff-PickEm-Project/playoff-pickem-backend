@@ -223,7 +223,7 @@ class GameService:
             return {"Message": "Over/Under prop successfully answered."}
 
     @staticmethod
-    def create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions, externalGameId=None):
+    def create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions, externalGameId=None, propLimit=2):
         """
         Create a new game within a league with multiple prop types.
 
@@ -238,6 +238,7 @@ class GameService:
             overUnderQuestions (list): List of dictionaries containing over/under prop data.
             variableOptionQuestions (list): List of dictionaries containing variable option prop data.
             externalGameId (str, optional): ESPN game ID for live polling.
+            propLimit (int, optional): Number of optional props players must answer. Defaults to 2.
 
         Returns:
             dict: A success message if the game is created successfully.
@@ -257,7 +258,8 @@ class GameService:
             game_name = gameName,
             start_time = date,
             graded = 0,
-            external_game_id = externalGameId  # Store ESPN game ID for polling
+            external_game_id = externalGameId,  # Store ESPN game ID for polling
+            prop_limit = propLimit
         )
 
         print(date)
@@ -302,11 +304,13 @@ class GameService:
         # From the argument, retrieve the question and answer choices (a list of tuples basically; idk if that's exactly accurate tho).
         question = variableOptionProp.get("question")
         options = variableOptionProp.get("options")
+        is_mandatory = variableOptionProp.get("is_mandatory", False)
 
         # Rest from here on out is pretty self explanatory. Just setting the fields based on the arg.
         new_prop = VariableOptionProp(
             game_id = game_id,
             question = question,
+            is_mandatory = is_mandatory
         )
 
         new_prop.options = []
@@ -352,6 +356,7 @@ class GameService:
         underdogTeam = winnerLoserProp.get("underdogTeam")
         favoriteTeamId = winnerLoserProp.get("favoriteTeamId")
         underdogTeamId = winnerLoserProp.get("underdogTeamId")
+        is_mandatory = winnerLoserProp.get("is_mandatory", True)
 
         new_prop = WinnerLoserProp(
             game_id = game_id,
@@ -363,7 +368,8 @@ class GameService:
             team_a_id = favoriteTeamId,
             team_b_id = underdogTeamId,
             team_a_name = favoriteTeam,
-            team_b_name = underdogTeam
+            team_b_name = underdogTeam,
+            is_mandatory = is_mandatory
         )
 
         game.winner_loser_props.append(new_prop)
@@ -396,6 +402,7 @@ class GameService:
         playerId = overUnderProp.get("playerId")
         statType = overUnderProp.get("statType")
         lineValue = overUnderProp.get("lineValue")
+        is_mandatory = overUnderProp.get("is_mandatory", False)
 
         new_prop = OverUnderProp(
             game_id = game_id,
@@ -405,7 +412,8 @@ class GameService:
             player_name = playerName,
             player_id = playerId,
             stat_type = statType,
-            line_value = lineValue
+            line_value = lineValue,
+            is_mandatory = is_mandatory
         )
 
         game.over_under_props.append(new_prop)
@@ -755,6 +763,10 @@ class GameService:
         # Update external game ID if provided
         if 'external_game_id' in data:
             game.external_game_id = data['external_game_id'] if data['external_game_id'] else None
+
+        # Update prop_limit if provided
+        if 'prop_limit' in data and data['prop_limit']:
+            game.prop_limit = int(data['prop_limit'])
 
         db.session.commit()
 

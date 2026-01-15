@@ -1,0 +1,353 @@
+# Join League Workflow
+
+## Overview
+
+Players join an existing league using a join code provided by the League Manager. The system creates a Player record associating the user with the league.
+
+## Architecture
+
+```
+Frontend → POST /join_league → LeagueService.join_league()
+    → Validate join code
+    → Check if user already in league
+    → Create Player record
+    → Add to league's player list
+    → Return success
+```
+
+## Endpoint
+
+**POST** `/join_league`
+
+**Controller**: `leagueController.py:40-58`
+
+**Service**: `leagueService.py:63-119`
+
+**Authentication**: Required (session)
+
+---
+
+## Request Format
+
+```json
+{
+  "username": "player@gmail.com",
+  "joinCode": "ABC123XYZ"
+}
+```
+
+**Required Fields**:
+- `username` (string): Email of the user joining (from session)
+- `joinCode` (string): 9-character league join code
+
+---
+
+## Response Format
+
+### Success (200)
+
+```json
+{
+  "message": "Player added to league successfully",
+  "league": {
+    "id": 123,
+    "league_name": "NFL Playoff Challenge 2026",
+    "join_code": "ABC123XYZ",
+    "commissioner_id": 456,
+    "league_players": [
+      {
+        "id": 456,
+        "name": "creator@gmail.com",
+        "points": 0
+      },
+      {
+        "id": 789,
+        "name": "player@gmail.com",
+        "points": 0
+      }
+    ]
+  }
+}
+```
+
+### Error Responses
+
+**404 - Invalid Join Code**:
+```json
+{
+  "description": "League not found"
+}
+```
+
+**400 - Already in League**:
+```json
+{
+  "description": "Player already exists in the league"
+}
+```
+
+**404 - User Not Found**:
+```json
+{
+  "description": "User not found"
+}
+```
+
+---
+
+## Code Flow
+
+### Service Layer
+
+**File**: `app/services/leagueService.py:63-119`
+
+**Step-by-step**:
+
+1. **Validate Inputs** (lines 83-84):
+   - Validate username format
+   - Validate join code format
+
+2. **Get User** (lines 86-88):
+   - Query User by username
+   - Abort with 404 if not found
+
+3. **Get League** (lines 90-92):
+   - Query League by join_code
+   - Abort with 404 if not found
+
+4. **Check Duplicate** (lines 95-98):
+   - Query Player table for existing record with username + league_id
+   - Abort with 400 if already exists
+
+5. **Create Player** (lines 101-105):
+   - Create new Player record
+   - Set name = username
+   - Set league_id = league.id
+   - Set points = 0
+
+6. **Set Commissioner** (lines 108-109):
+   - If this is first player in league
+   - Set league.commissioner_id = player.id
+
+7. **Add to League** (line 112):
+   - Append player to league.league_players relationship
+
+8. **Commit Transaction** (line 114)
+
+9. **Return League** (line 116)
+
+---
+
+## Database Changes
+
+### New Records Created
+
+**Player Table**:
+```sql
+INSERT INTO player (name, league_id, points)
+VALUES ('player@gmail.com', 123, 0);
+```
+
+### Updated Relationships
+
+**League.league_players**: New player added to list
+
+**Commissioner Assignment**: If first player, `league.commissioner_id` set to new player's ID
+
+---
+
+## Join Code Validation
+
+**Validation** (`leagueValidator.py`):
+- Must be 9 characters
+- Alphanumeric only
+- Case-insensitive (converted to uppercase)
+
+**Lookup**: Database query by exact match (case-sensitive stored as uppercase)
+
+---
+
+## Duplicate Player Prevention
+
+**Check** (`leagueService.py:95-98`):
+
+```
+Player.query.filter_by(name=username, league_id=league.id).first()
+```
+
+**Why This Works**:
+- A user can be in multiple leagues (different Player records)
+- But cannot join same league twice
+- Unique constraint: (name, league_id) combination
+
+**No Database Constraint**: This is enforced in application logic only
+
+---
+
+## Frontend Integration
+
+### Join League Form
+
+**Example**:
+```javascript
+const joinLeague = async (username, joinCode) => {
+  const response = await fetch('http://localhost:5000/join_league', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    credentials: 'include',
+    body: JSON.stringify({
+      username: username,
+      joinCode: joinCode
+    })
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    console.log('Joined league:', data.league.league_name);
+    // Redirect to league home page
+  } else {
+    const error = await response.json();
+    alert(error.description);
+  }
+};
+```
+
+### User Flow
+
+1. User receives join code from League Manager
+2. User navigates to "Join League" page
+3. User enters join code
+4. System validates and creates Player record
+5. User redirected to league home page
+
+---
+
+## Validation Rules
+
+### Username
+
+**Rules**:
+- Must match authenticated session user
+- User must exist in database
+- Cannot already be in the league
+
+**Validator**: `userValidator.py:5-21`
+
+### Join Code
+
+**Rules**:
+- Must be 9 characters
+- Alphanumeric only
+- Must match existing league
+
+**Validator**: `leagueValidator.py:31-48`
+
+---
+
+## Common Errors
+
+### 1. "League not found"
+
+**Cause**: Join code doesn't match any league
+
+**Common Reasons**:
+- Typo in join code
+- Code was regenerated by commissioner
+- League was deleted
+
+**Solution**: Verify join code with League Manager
+
+---
+
+### 2. "Player already exists in the league"
+
+**Cause**: User trying to join league they're already in
+
+**Solution**: Redirect to league home page instead
+
+**Prevention**: Check user's leagues before showing join form
+
+---
+
+### 3. "User not found"
+
+**Cause**: Username doesn't match any User record
+
+**Solution**: Ensure user is logged in and session is valid
+
+---
+
+### 4. Case sensitivity issues
+
+**Note**: Join codes are stored as uppercase in database
+
+**Handling**: Frontend should convert to uppercase before sending, or backend normalizes
+
+**Current Behavior**: Case-sensitive match (both must be uppercase)
+
+---
+
+## Commissioner Assignment Logic
+
+**First Player** (`leagueService.py:108-109`):
+
+When the first player joins:
+```
+if not league.commissioner_id:
+    league.commissioner_id = new_player.id
+```
+
+**This happens during**:
+1. League creation (creator becomes commissioner)
+2. If commissioner leaves and rejoins (preserves commissioner status)
+
+**Commissioner Privileges**:
+- Create games
+- Grade games
+- Delete league
+- Edit games
+- Manage players
+
+---
+
+## Related Workflows
+
+- [Create League](./league-create.md) - Creating the league
+- [Leave League](./league-leave.md) - Removing player from league
+- [Get League Info](./league-info.md) - Viewing league details
+
+---
+
+## Business Logic
+
+### Why Separate User and Player?
+
+**User**: Global account (one per email)
+**Player**: League-specific participation (many per user)
+
+**Benefits**:
+- User can join multiple leagues
+- Each league has independent standings
+- User retains global profile across leagues
+
+### Why Allow Multiple Leagues?
+
+Users may want to:
+- Compete with different friend groups
+- Play in multiple league types
+- Have separate work/personal leagues
+
+---
+
+## Security Considerations
+
+1. **Authentication Required**: Must be logged in to join
+2. **Duplicate Prevention**: Cannot join same league twice
+3. **No League Browsing**: Must know join code (no public league list)
+4. **Commissioner Control**: Only commissioner can remove players
+
+---
+
+*Last Updated: January 2026*

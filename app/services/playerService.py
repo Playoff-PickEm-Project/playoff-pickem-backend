@@ -111,3 +111,27 @@ class PlayerService:
         player.points = new_points
 
         db.session.commit()
+
+    @staticmethod
+    def get_player_by_username_and_leaguename(username, leaguename):
+        """
+        Get a player by username and league name.
+
+        Args:
+            username (str): The username of the user.
+            leaguename (str): The name of the league.
+
+        Returns:
+            Player: The player object if found, None otherwise.
+
+        Raises:
+            400: If validation fails.
+            404: If the player doesn't exist.
+        """
+        username = validate_username(username)
+        leaguename = validate_league_name(leaguename)
+
+        player = get_player_by_username_and_leaguename(username, leaguename)
+        validate_player_exists(player)
+
+        return player

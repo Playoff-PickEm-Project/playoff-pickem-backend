@@ -35,6 +35,10 @@ class WinnerLoserProp(db.Model):
     # ID of the winning team after game ends (used for grading)
     winning_team_id = db.Column(db.String(50), nullable=True)
 
+    # Whether this prop is mandatory (must be answered) or optional (player can choose)
+    # Winner/Loser props default to mandatory
+    is_mandatory = db.Column(db.Boolean, default=True, nullable=False)
+
     def to_dict(self):
         return {
             'prop_id': self.id,
@@ -52,4 +56,5 @@ class WinnerLoserProp(db.Model):
             'team_a_score': self.team_a_score,
             'team_b_score': self.team_b_score,
             'winning_team_id': self.winning_team_id,
+            'is_mandatory': self.is_mandatory,
         }

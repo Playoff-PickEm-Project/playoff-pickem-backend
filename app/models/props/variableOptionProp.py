@@ -13,12 +13,17 @@ class VariableOptionProp(db.Model):
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'))
     
     correct_answer = db.Column(ARRAY(db.String))
-    
+
+    # Whether this prop is mandatory (must be answered) or optional (player can choose)
+    # Variable option props default to optional
+    is_mandatory = db.Column(db.Boolean, default=False, nullable=False)
+
     def to_dict(self):
         return {
             'prop_id': self.id,
             'game_id': self.game_id,
             'question': self.question,
             'options': [option.to_dict() for option in self.options],
-            'correct_answer': self.correct_answer
+            'correct_answer': self.correct_answer,
+            'is_mandatory': self.is_mandatory,
         }

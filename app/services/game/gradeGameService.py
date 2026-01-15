@@ -8,7 +8,8 @@ from app.repositories.propRepository import (
     get_variable_option_answers_for_prop,
     get_winner_loser_prop_by_id,
     get_over_under_prop_by_id,
-    get_variable_option_prop_by_id
+    get_variable_option_prop_by_id,
+    get_player_prop_selections_for_game
 )
 from app.repositories.playerRepository import get_player_by_id
 from app.validators.gameValidator import validate_game_exists, validate_game_id
@@ -24,6 +25,26 @@ class GradeGameService:
     based on their answers, and handles regrading by deducting old points when
     correct answers are changed after a game has been graded.
     """
+
+    @staticmethod
+    def _has_player_selected_prop(player_id, game_id, prop_type, prop_id):
+        """
+        Check if a player has selected a specific prop for a game.
+
+        Args:
+            player_id (int): The player's ID
+            game_id (int): The game's ID
+            prop_type (str): Type of prop ("winner_loser", "over_under", or "variable_option")
+            prop_id (int): The prop's ID
+
+        Returns:
+            bool: True if the player has selected this prop, False otherwise
+        """
+        selections = get_player_prop_selections_for_game(player_id, game_id)
+        for selection in selections:
+            if selection.prop_type == prop_type and selection.prop_id == prop_id:
+                return True
+        return False
 
     @staticmethod
     def auto_grade_props_from_live_data(game):
@@ -97,6 +118,11 @@ class GradeGameService:
             for answer in answers:
                 player = get_player_by_id(answer.player_id)  # Get the player who submitted the answer
 
+                # For optional props, check if player selected this prop
+                if not prop.is_mandatory:
+                    if not GradeGameService._has_player_selected_prop(player.id, game.id, "winner_loser", prop.id):
+                        continue  # Skip grading if player didn't select this optional prop
+
                 # Check if the player's answer matches the correct answer
                 if player is not None and answer.answer == prop.correct_answer:
                     print("HERE")
@@ -117,6 +143,11 @@ class GradeGameService:
                 player = get_player_by_id(answer.player_id)
                 print(answer.answer)
 
+                # For optional props, check if player selected this prop
+                if not prop.is_mandatory:
+                    if not GradeGameService._has_player_selected_prop(player.id, game.id, "over_under", prop.id):
+                        continue  # Skip grading if player didn't select this optional prop
+
                 # Case-insensitive comparison for safety
                 if player is not None and answer.answer.lower() == prop.correct_answer.lower():
                     if answer.answer.lower() == "over":
@@ -129,6 +160,11 @@ class GradeGameService:
 
             for answer in answers:
                 player = get_player_by_id(answer.player_id)
+
+                # For optional props, check if player selected this prop
+                if not prop.is_mandatory:
+                    if not GradeGameService._has_player_selected_prop(player.id, game.id, "variable_option", prop.id):
+                        continue  # Skip grading if player didn't select this optional prop
 
                 for correct in prop.correct_answer:
                     if player is not None and answer.answer == correct:
