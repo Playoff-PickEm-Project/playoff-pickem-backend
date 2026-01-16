@@ -19,7 +19,7 @@ Frontend Form → POST /create_game → GameService.create_game()
 
 **POST** `/create_game`
 
-**Controller**: `leagueController.py:134-162`
+**Controller**: `leagueController.py:135-172`
 
 **Service**: `gameService.py:226-286` (`GameService.create_game`)
 
@@ -122,7 +122,7 @@ Frontend Form → POST /create_game → GameService.create_game()
 
 ### 1. Controller Layer
 
-**File**: `app/controllers/leagueController.py:134-162`
+**File**: `app/controllers/leagueController.py:135-172`
 
 ```python
 @leagueController.route('/create_game', methods=['POST'])
@@ -132,7 +132,15 @@ def createGame():
     gameName = data.get('gameName')
     date = data.get('date')
     externalGameId = data.get('externalGameId')  # ESPN game ID
-    propLimit = data.get('propLimit', 2)  # Default to 2
+    # Use 0 as default only if propLimit is not provided; allow 0 as valid value
+    propLimit = data.get('propLimit') if data.get('propLimit') is not None else 0
+
+    # Debug logging
+    print(f"=== CREATE GAME DEBUG ===")
+    print(f"Received propLimit from request: {data.get('propLimit')} (type: {type(data.get('propLimit'))})")
+    print(f"Using propLimit value: {propLimit}")
+    print(f"========================")
+
     winnerLoserQuestions = data.get('winnerLoserQuestions')
     overUnderQuestions = data.get('overUnderQuestions')
     variableOptionQuestions = data.get('variableOptionQuestions')
@@ -145,6 +153,8 @@ def createGame():
 
     return jsonify(result)
 ```
+
+**Important**: The controller now correctly handles `propLimit=0` by checking for `None` instead of using the default parameter fallback, which would incorrectly treat `0` as falsy.
 
 ### 2. Service Layer
 
@@ -619,6 +629,18 @@ date: new Date("2026-01-29T21:30:00").toISOString()
   - `choice_text`: Required, string
   - `points`: Required, float
 - `is_mandatory`: Optional, boolean, defaults to `false`
+
+---
+
+## Known Issues
+
+### Safari iOS "Load failed" Error
+
+**Issue**: On Safari iOS, game creation may show "Load failed" error despite successful creation.
+
+**Details**: See [Frontend Known Issues](../../playoff-pickem-frontend/docs/known-issues.md#safari-ios-load-failed-error-on-post-requests)
+
+**Workaround**: Implemented in frontend (error is cosmetic, game creates successfully)
 
 ---
 
