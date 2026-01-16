@@ -131,7 +131,7 @@ def getPlayerStandings():
 
     return jsonify(result)
 
-@leagueController.route('/create_game', methods=['POST'])
+@leagueController.route('/create_game', methods=['POST', 'OPTIONS'])
 def createGame():
     """
     Create a new game within a league with multiple prop types.
