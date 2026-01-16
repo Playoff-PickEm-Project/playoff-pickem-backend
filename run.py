@@ -25,9 +25,13 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 # Configure CORS - allow localhost:3000 to make credentialed requests
+# Safari requires explicit headers for CORS preflight requests
 CORS(app,
      origins=["http://localhost:3000", "http://127.0.0.1:3000", "https://playoff-pickem-frontend-q31n.onrender.com"],
-     supports_credentials=True)
+     supports_credentials=True,
+     allow_headers=["Content-Type", "Authorization"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     max_age=3600)
 
 # Register blueprints and other configurations
 app.register_blueprint(usersController)
