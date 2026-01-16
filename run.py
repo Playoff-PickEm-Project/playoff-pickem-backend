@@ -14,12 +14,12 @@ import os
 app = create_app()  # Initialize the app
 
 # Configure session
-if app.env == "production":
-    app.config['SESSION_COOKIE_SECURE'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-else:
-    app.config['SESSION_COOKIE_SECURE'] = False
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+# if app.env == "production":
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+# else:
+# app.config['SESSION_COOKIE_SECURE'] = False
+# app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
