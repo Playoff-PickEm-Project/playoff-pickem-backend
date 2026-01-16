@@ -1,5 +1,4 @@
 from flask import Blueprint, jsonify, request
-from flask_cors import cross_origin
 from app.services.leagueService import LeagueService
 from app.services.playerService import PlayerService
 from app.services.game.gameService import GameService
@@ -133,7 +132,6 @@ def getPlayerStandings():
     return jsonify(result)
 
 @leagueController.route('/create_game', methods=['POST'])
-@cross_origin(origins=["http://localhost:3000", "http://127.0.0.1:3000", "https://playoff-pickem-frontend-q31n.onrender.com"], supports_credentials=True)
 def createGame():
     """
     Create a new game within a league with multiple prop types.
@@ -171,9 +169,7 @@ def createGame():
 
     result = GameService.create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions, externalGameId, propLimit)
 
-    response = jsonify(result)
-    response.status_code = 200
-    return response
+    return jsonify(result)
 
 @leagueController.route('/get_games', methods=['GET'])
 def viewGamesInLeague():
