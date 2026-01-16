@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, make_response
 from app.services.leagueService import LeagueService
 from app.services.playerService import PlayerService
 from app.services.game.gameService import GameService
@@ -150,20 +150,21 @@ def createGame():
     """
     if request.method == "OPTIONS":
         return "", 204
-      
+
     data = request.get_json()
     leagueName = data.get('leagueName')
     gameName = data.get('gameName')
     date = data.get('date')
     externalGameId = data.get('externalGameId')  # ESPN game ID
-    propLimit = data.get('propLimit', 2)  # Default to 2 if not provided
+    # Use 2 as default only if propLimit is not provided; allow 0 as valid value
+    propLimit = data.get('propLimit') if data.get('propLimit') is not None else 0
     winnerLoserQuestions = data.get('winnerLoserQuestions')
     overUnderQuestions = data.get('overUnderQuestions')
     variableOptionQuestions = data.get('variableOptionQuestions')
 
     result = GameService.create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions, externalGameId, propLimit)
 
-    return jsonify(result)
+    return jsonify(result), 200
 
 @leagueController.route('/get_games', methods=['GET'])
 def viewGamesInLeague():
