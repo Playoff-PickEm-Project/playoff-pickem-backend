@@ -53,8 +53,7 @@ class Game(db.Model):
     team_b_score = db.Column(db.Integer, nullable=True)
 
     # Number of props each player must select to answer for this game
-    # Defaults to 2 if not specified
-    prop_limit = db.Column(db.Integer, default=2, nullable=False)
+    prop_limit = db.Column(db.Integer, nullable=False)
 
     def to_dict(self):
         return {
