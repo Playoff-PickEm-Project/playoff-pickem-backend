@@ -14,9 +14,14 @@ import os
 app = create_app()  # Initialize the app
 
 # Configure session
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production
+if app.env == "production":
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+else:
+    app.config['SESSION_COOKIE_SECURE'] = False
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 # Configure CORS - allow localhost:3000 to make credentialed requests
