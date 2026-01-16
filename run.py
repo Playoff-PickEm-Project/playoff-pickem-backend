@@ -26,8 +26,10 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 # Configure CORS - allow localhost:3000 to make credentialed requests
 CORS(app,
-     origins=["http://localhost:3000", "http://127.0.0.1:3000", "https://playoff-pickem-frontend-q31n.onrender.com"],
-     supports_credentials=True)
+     resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000", "https://playoff-pickem-frontend-q31n.onrender.com"]}},
+     supports_credentials=True,
+     allow_headers=["Content-Type", "Authorization"],
+     expose_headers=["Content-Type"])
 
 # Register blueprints and other configurations
 app.register_blueprint(usersController)

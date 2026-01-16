@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, make_response
+from flask import Blueprint, jsonify, request
 from app.services.leagueService import LeagueService
 from app.services.playerService import PlayerService
 from app.services.game.gameService import GameService
@@ -158,13 +158,23 @@ def createGame():
     externalGameId = data.get('externalGameId')  # ESPN game ID
     # Use 2 as default only if propLimit is not provided; allow 0 as valid value
     propLimit = data.get('propLimit') if data.get('propLimit') is not None else 0
+
+    # Debug logging
+    print(f"=== CREATE GAME DEBUG ===")
+    print(f"Received propLimit from request: {data.get('propLimit')} (type: {type(data.get('propLimit'))})")
+    print(f"Using propLimit value: {propLimit}")
+    print(f"Full request data keys: {data.keys()}")
+    print(f"========================")
+
     winnerLoserQuestions = data.get('winnerLoserQuestions')
     overUnderQuestions = data.get('overUnderQuestions')
     variableOptionQuestions = data.get('variableOptionQuestions')
 
     result = GameService.create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions, externalGameId, propLimit)
 
-    return jsonify(result), 200
+    response = jsonify(result)
+    response.status_code = 200
+    return response
 
 @leagueController.route('/get_games', methods=['GET'])
 def viewGamesInLeague():
