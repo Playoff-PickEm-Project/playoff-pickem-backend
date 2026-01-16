@@ -148,6 +148,9 @@ def createGame():
     Returns:
         JSON: Success message if the game is created successfully
     """
+    if request.method == "OPTIONS":
+        return "", 204
+      
     data = request.get_json()
     leagueName = data.get('leagueName')
     gameName = data.get('gameName')
