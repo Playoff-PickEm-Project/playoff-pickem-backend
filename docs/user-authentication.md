@@ -160,36 +160,94 @@ Cookie: session=eyJ1c2VybmFtZSI6InVzZXJAZ21haWwuY29tIn0...
 
 ---
 
-### 4. Logout
+### 4. Check Session Info
 
-**Endpoint**: `GET /logout`
+**Endpoint**: `GET /session-info`
 
-**Purpose**: Clear user session
+**Purpose**: Retrieve current session information including auth provider
 
-**Controller**: `usersController.py:39`
+**Controller**: `usersController.py:79`
 
 **Flow**:
-1. Frontend initiates logout
-2. Backend clears session
-3. Redirects to frontend
+1. Frontend checks session status
+2. Backend returns username and auth provider if logged in
+3. Returns 401 error if no active session
 
 **Code Reference**:
 ```python
-# File: app/controllers/usersController.py:39-49
-@usersController.route('/logout')
-def logout():
-    session.pop('username', None)
-    return redirect(f"{frontend_url}")
+# File: app/controllers/usersController.py:79-95
+@usersController.route('/session-info', methods=['GET'])
+def session_info():
+    if 'username' in session:
+        return jsonify({
+            'username': session['username'],
+            'auth_provider': session.get('auth_provider', 'local')
+        })
+    return jsonify({'error': 'Not logged in'}), 401
 ```
 
 **Request Example**:
 ```http
-GET /logout HTTP/1.1
+GET /session-info HTTP/1.1
 Host: localhost:5000
 Cookie: session=eyJ1c2VybmFtZSI6InVzZXJAZ21haWwuY29tIn0...
 ```
 
-**Response**: HTTP 302 Redirect to frontend (session cleared)
+**Success Response** (200):
+```json
+{
+  "username": "user@gmail.com",
+  "auth_provider": "google"
+}
+```
+
+**Error Response** (401):
+```json
+{
+  "error": "Not logged in"
+}
+```
+
+---
+
+### 5. Logout
+
+**Endpoint**: `POST /logout`
+
+**Purpose**: Clear user session and log out
+
+**Controller**: `usersController.py:97`
+
+**Flow**:
+1. Frontend calls logout endpoint
+2. Backend clears session using `session.clear()`
+3. Returns success message
+
+**Code Reference**:
+```python
+# File: app/controllers/usersController.py:97-108
+@usersController.route('/logout', methods=['POST'])
+def logout():
+    username = session.get('username', 'Unknown')
+    session.clear()
+    logging.info(f"User {username} logged out successfully")
+    return jsonify({'message': 'Logged out successfully'}), 200
+```
+
+**Request Example**:
+```http
+POST /logout HTTP/1.1
+Host: localhost:5000
+Content-Type: application/json
+Cookie: session=eyJ1c2VybmFtZSI6InVzZXJAZ21haWwuY29tIn0...
+```
+
+**Success Response** (200):
+```json
+{
+  "message": "Logged out successfully"
+}
+```
 
 ---
 
@@ -274,8 +332,22 @@ if (response.ok) {
 ### Logout Flow
 
 ```javascript
-// Redirect to logout endpoint
-window.location.href = 'http://localhost:5000/logout';
+// Call logout endpoint to clear session
+await fetch('http://localhost:5000/logout', {
+  method: 'POST',
+  credentials: 'include',  // Include session cookie
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Clear local storage
+localStorage.removeItem('username');
+localStorage.removeItem('auth_provider');
+localStorage.setItem('authorized', 'false');
+
+// Redirect to login page
+navigate('/login');
 ```
 
 ### Making Authenticated Requests
