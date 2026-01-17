@@ -94,6 +94,19 @@ def session_info():
     logging.info("No user found in session")
     return jsonify({'error': 'Not logged in'}), 401
 
+@usersController.route('/logout', methods=['POST'])
+def logout():
+    """
+    Log out the current user by clearing their session.
+
+    Returns:
+        JSON: Success message
+    """
+    username = session.get('username', 'Unknown')
+    session.clear()
+    logging.info(f"User {username} logged out successfully")
+    return jsonify({'message': 'Logged out successfully'}), 200
+
 @usersController.route('/login/google', methods=['GET'])
 def login_google():
     """
