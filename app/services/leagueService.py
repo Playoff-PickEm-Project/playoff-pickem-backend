@@ -3,6 +3,8 @@ from app import db
 from app.models.leagueModel import League
 from app.models.propAnswers.overUnderAnswer import OverUnderAnswer
 from app.models.propAnswers.winnerLoserAnswer import WinnerLoserAnswer
+from app.models.propAnswers.variableOptionAnswer import VariableOptionAnswer
+from app.models.playerPropSelection import PlayerPropSelection
 from app.repositories.leagueRepository import get_all_leagues, get_league_by_name, get_leagues_by_username, get_league_by_join_code
 from app.repositories.playerRepository import get_player_by_username_and_leaguename, get_player_by_playername_and_leaguename
 from app.repositories.gameRepository import get_game_by_id
@@ -261,13 +263,23 @@ class LeagueService:
             db.session.delete(overUnderProp)
             db.session.commit()
 
-        # DELETE EVERYTHING IN THE VARIABLEOPTIONPROP
-        ######
-        ######
-        ######
-        ######
-        ######
-        ######
+        # Remove all the answers associated with the variable option props
+        for variableOptionProp in game.variable_option_props:
+            # Delete all answers associated with this prop
+            variableOptionAnswers = VariableOptionAnswer.query.filter_by(prop_id=variableOptionProp.id).all()
+            for answer in variableOptionAnswers:
+                db.session.delete(answer)
+                db.session.commit()
+
+            # Delete the variableOptionProp after removing the answers
+            db.session.delete(variableOptionProp)
+            db.session.commit()
+
+        # Delete all player prop selections for this game
+        playerPropSelections = PlayerPropSelection.query.filter_by(game_id=game_id).all()
+        for selection in playerPropSelections:
+            db.session.delete(selection)
+            db.session.commit()
 
         # Finally, delete the game
         db.session.delete(game)
