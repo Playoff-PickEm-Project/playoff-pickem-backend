@@ -45,7 +45,8 @@ class Player(db.Model):
             'name': self.name,
             'league_id': self.league_id,
             'user_id': self.user_id,
-            'points': self.points,
+            'username': self.user.username if self.user else None,  # Include username for matching
+            'points': float(self.points) if self.points else 0,  # Convert Numeric to float
             #'league': self.league.to_dict() if self.league else None,  # Include league details if exists
             #'user': self.user.to_dict() if self.user else None   # Include user details if exists
         }
