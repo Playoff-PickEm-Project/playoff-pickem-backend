@@ -444,6 +444,7 @@ class PropService:
         """
         Allow a player to deselect a prop they previously selected.
 
+        Deletes both the prop selection AND any answer the player submitted for that prop.
         Mandatory props cannot be deselected by players.
 
         Args:
@@ -459,6 +460,10 @@ class PropService:
             404: If selection doesn't exist.
         """
         from app.models.playerPropSelection import PlayerPropSelection
+        from app.models.propAnswers.winnerLoserAnswer import WinnerLoserAnswer
+        from app.models.propAnswers.overUnderAnswer import OverUnderAnswer
+        from app.models.propAnswers.variableOptionAnswer import VariableOptionAnswer
+
         selection = PlayerPropSelection.query.get(selection_id)
 
         if not selection:
@@ -471,6 +476,36 @@ class PropService:
         if PropService._is_prop_mandatory(selection.prop_type, selection.prop_id):
             abort(400, description="Mandatory props cannot be deselected.")
 
+        # Delete any existing answer for this prop before deleting the selection
+        prop_type = selection.prop_type
+        prop_id = selection.prop_id
+
+        if prop_type == 'winner_loser':
+            existing_answer = WinnerLoserAnswer.query.filter_by(
+                player_id=player_id,
+                prop_id=prop_id
+            ).first()
+            if existing_answer:
+                db.session.delete(existing_answer)
+                db.session.commit()
+        elif prop_type == 'over_under':
+            existing_answer = OverUnderAnswer.query.filter_by(
+                player_id=player_id,
+                prop_id=prop_id
+            ).first()
+            if existing_answer:
+                db.session.delete(existing_answer)
+                db.session.commit()
+        elif prop_type == 'variable_option':
+            existing_answer = VariableOptionAnswer.query.filter_by(
+                player_id=player_id,
+                prop_id=prop_id
+            ).first()
+            if existing_answer:
+                db.session.delete(existing_answer)
+                db.session.commit()
+
+        # Delete the prop selection
         return delete_player_prop_selection(selection_id)
 
     @staticmethod
