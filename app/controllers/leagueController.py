@@ -141,9 +141,11 @@ def createGame():
         - gameName (str): The name of the game
         - date (str): The start time/date for the game
         - externalGameId (str, optional): ESPN game ID for live polling
+        - propLimit (int, optional): Number of optional props players must select
         - winnerLoserQuestions (list): List of winner/loser prop data
         - overUnderQuestions (list): List of over/under prop data
         - variableOptionQuestions (list): List of variable option prop data
+        - anytimeTdQuestions (list, optional): List of anytime TD prop data
 
     Returns:
         JSON: Success message if the game is created successfully
@@ -166,8 +168,9 @@ def createGame():
     winnerLoserQuestions = data.get('winnerLoserQuestions')
     overUnderQuestions = data.get('overUnderQuestions')
     variableOptionQuestions = data.get('variableOptionQuestions')
+    anytimeTdQuestions = data.get('anytimeTdQuestions')
 
-    result = GameService.create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions, externalGameId, propLimit)
+    result = GameService.create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions, anytimeTdQuestions, externalGameId, propLimit)
 
     return jsonify(result)
 

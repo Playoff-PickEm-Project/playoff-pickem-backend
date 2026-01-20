@@ -8,10 +8,13 @@ from app.models.propAnswers.winnerLoserAnswer import WinnerLoserAnswer
 from app.models.propAnswers.overUnderAnswer import OverUnderAnswer
 from app.models.props.hashMapAnswers import HashMapAnswers
 from app.models.props.variableOptionProp import VariableOptionProp
+from app.models.props.anytimeTdProp import AnytimeTdProp
+from app.models.props.anytimeTdOption import AnytimeTdOption
+from app.models.propAnswers.anytimeTdAnswer import AnytimeTdAnswer
 from app.repositories.leagueRepository import get_league_by_name
 from app.repositories.gameRepository import get_game_by_id
 from app.repositories.playerRepository import get_player_by_username_and_leaguename, get_player_by_id
-from app.repositories.propRepository import get_variable_option_answers_for_prop, get_variable_option_prop_by_id, get_winner_loser_prop_by_id, get_over_under_prop_by_id, get_over_under_answers_for_prop, get_winner_loser_answers_for_prop
+from app.repositories.propRepository import get_variable_option_answers_for_prop, get_variable_option_prop_by_id, get_winner_loser_prop_by_id, get_over_under_prop_by_id, get_over_under_answers_for_prop, get_winner_loser_answers_for_prop, get_anytime_td_prop_by_id, get_anytime_td_answers_for_prop
 from app.validators.leagueValidator import validate_league_name, validate_league_exists, validate_player_exists
 from app.validators.userValidator import validate_username
 from app.validators.gameValidator import validate_game_exists, validate_game_id
@@ -62,6 +65,9 @@ class GameService:
 
         for variableOptionProp in game.variable_option_props:
             GameService.answer_variable_option_prop(leagueName, username, variableOptionProp.id, answer)
+
+        for anytimeTdProp in game.anytime_td_props:
+            GameService.answer_anytime_td_prop(leagueName, username, anytimeTdProp.id, answer)
 
         return {"Message": "Game answered by player successfully."}
 
@@ -223,12 +229,66 @@ class GameService:
             return {"Message": "Over/Under prop successfully answered."}
 
     @staticmethod
-    def create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions, externalGameId=None, propLimit=2):
+    def answer_anytime_td_prop(leagueName, username, prop_id, answer):
+        """
+        Save or update a player's answer for an anytime TD prop.
+
+        The answer should be the player name selected from the available options
+        (e.g., "Travis Kelce"). If the player has already answered this prop,
+        updates their existing answer. Otherwise, creates a new answer record.
+
+        Args:
+            leagueName (str): The name of the league.
+            username (str): The username of the player.
+            prop_id (int): The unique identifier of the anytime TD prop.
+            answer (dict): Dictionary containing the answer for this prop
+                          (should include the selected player name).
+
+        Returns:
+            dict: A success message indicating whether the answer was created or updated.
+
+        Raises:
+            400: If validation fails for any input.
+            404: If the player doesn't exist.
+
+        Example:
+            answer_anytime_td_prop("MyLeague", "john@example.com", 5, "Travis Kelce")
+        """
+        leagueName = validate_league_name(leagueName)
+        username = validate_username(username)
+        prop_id = validate_prop_id(prop_id)
+        answer = validate_answer(answer)
+
+        player = get_player_by_username_and_leaguename(username, leagueName)
+        validate_player_exists(player)
+
+        # Check if the player has already answered this prop_id
+        existing_answer = AnytimeTdAnswer.query.filter_by(prop_id=prop_id, player_id=player.id).first()
+
+        if existing_answer:
+            # If the player has already answered, update the existing answer
+            existing_answer.answer = answer
+            db.session.commit()
+            return {"Message": "Anytime TD prop answer updated successfully."}
+        else:
+            # If the player hasn't answered yet, create a new answer
+            new_answer = AnytimeTdAnswer(
+                answer=answer,
+                prop_id=prop_id,
+                player_id=player.id
+            )
+            db.session.add(new_answer)
+            db.session.commit()
+
+            return {"Message": "Anytime TD prop successfully answered."}
+
+    @staticmethod
+    def create_game(leagueName, gameName, date, winnerLoserQuestions, overUnderQuestions, variableOptionQuestions, anytimeTdQuestions=None, externalGameId=None, propLimit=2):
         """
         Create a new game within a league with multiple prop types.
 
         Creates a game with the specified name and date, then creates all winner/loser,
-        over/under, and variable option props for that game.
+        over/under, variable option, and anytime TD props for that game.
 
         Args:
             leagueName (str): The name of the league to create the game in.
@@ -237,6 +297,7 @@ class GameService:
             winnerLoserQuestions (list): List of dictionaries containing winner/loser prop data.
             overUnderQuestions (list): List of dictionaries containing over/under prop data.
             variableOptionQuestions (list): List of dictionaries containing variable option prop data.
+            anytimeTdQuestions (list, optional): List of dictionaries containing anytime TD prop data.
             externalGameId (str, optional): ESPN game ID for live polling.
             propLimit (int, optional): Number of optional props players must answer. Defaults to 2.
 
@@ -278,6 +339,11 @@ class GameService:
 
         for variableOptionProp in variableOptionQuestions:
             GameService.createVariableOptionQuestion(variableOptionProp, new_game.id)
+
+        # Create anytime TD props if provided
+        if anytimeTdQuestions:
+            for anytimeTdProp in anytimeTdQuestions:
+                GameService.createAnytimeTdQuestion(anytimeTdProp, new_game.id)
 
         league.league_games.append(new_game)
 
@@ -424,6 +490,74 @@ class GameService:
         return {"message": "Created over/under prop successfully."}
 
     @staticmethod
+    def createAnytimeTdQuestion(anytimeTdProp, game_id):
+        """
+        Create an anytime TD scorer prop for a game.
+
+        Creates a prop with multiple player options, where each option has its own
+        player name, TD line threshold, and point value. Users select one player,
+        and points are awarded if that player scores TDs >= their specific line.
+
+        Args:
+            anytimeTdProp (dict): Dictionary containing:
+                - question (str): The prop question text
+                - is_mandatory (bool): Whether all players must answer this prop
+                - options (list): List of player option dicts with:
+                    - player_name (str): Name of the player (e.g., "Travis Kelce")
+                    - td_line (float): TD threshold (e.g., 0.5 for 1+ TD, 1.5 for 2+ TDs)
+                    - points (int): Points awarded if player hits their line
+            game_id (int): The unique identifier of the game this prop belongs to.
+
+        Returns:
+            dict: A success message if the prop is created successfully.
+
+        Example:
+            anytimeTdProp = {
+                "question": "Pick a player to score a TD",
+                "is_mandatory": False,
+                "options": [
+                    {"player_name": "Travis Kelce", "td_line": 0.5, "points": 5},
+                    {"player_name": "Patrick Mahomes", "td_line": 1.5, "points": 12}
+                ]
+            }
+        """
+        game = get_game_by_id(game_id)
+
+        # Extract prop-level fields
+        question = anytimeTdProp.get("question")
+        options = anytimeTdProp.get("options")
+        is_mandatory = anytimeTdProp.get("is_mandatory", False)
+
+        # Create the prop
+        new_prop = AnytimeTdProp(
+            game_id = game_id,
+            question = question,
+            is_mandatory = is_mandatory
+        )
+
+        # Initialize empty options list
+        new_prop.options = []
+
+        # Add to game's relationship
+        game.anytime_td_props.append(new_prop)
+
+        # Create each player option with its own TD line and points
+        for option in options:
+            new_option = AnytimeTdOption(
+                player_name = option.get('player_name'),
+                td_line = option.get('td_line', 0.5),  # Default to 0.5 (1+ TD) if not specified
+                points = option.get('points'),
+                current_tds = 0  # Initialize to 0, will be updated by polling
+            )
+            db.session.add(new_option)
+            new_prop.options.append(new_option)
+
+        db.session.add(new_prop)
+        db.session.commit()
+
+        return {"message": "Created anytime TD prop successfully."}
+
+    @staticmethod
     def view_games_in_league(leagueName):
         """
         Retrieve all games within a specific league.
@@ -499,7 +633,7 @@ class GameService:
                         "question": prop.question
                     })
 
-        # Loop through all over-under props and get answers for each one
+        # Loop through all variable option props and get answers for each one
         for prop in game.variable_option_props:
             answers = get_variable_option_answers_for_prop(prop.id)
 
@@ -512,6 +646,22 @@ class GameService:
                         "answer": answer.answer,            # Assuming the answer has an answer attribute (could be 'over' or 'under')
                         "prop_id": prop.id,                  # Optionally, you can include the prop_id to track which prop the answer belongs to
                         "correct_answer": prop.correct_answer,
+                        "question": prop.question
+                    })
+
+        # Loop through all anytime TD props and get answers for each one
+        for prop in game.anytime_td_props:
+            answers = get_anytime_td_answers_for_prop(prop.id)
+
+            # Iterate through the answers and associate each player's name with their answer
+            for answer in answers:
+                player = get_player_by_id(answer.player_id)
+                if player is not None:
+                    picks.append({
+                        "player_name": player.name,
+                        "answer": answer.answer,  # The player name they selected (e.g., "Travis Kelce")
+                        "prop_id": prop.id,
+                        "correct_answer": prop.correct_answer,  # JSON array of players who hit their lines
                         "question": prop.question
                     })
 
@@ -664,17 +814,77 @@ class GameService:
         return {"message": "Variable Option prop added successfully.", "prop_id": new_prop.id}
 
     @staticmethod
+    def add_anytime_td_prop(data):
+        """
+        Add a new Anytime TD prop to an existing game.
+
+        Creates a new anytime TD prop with multiple player options, where each option
+        has its own TD line and point value.
+
+        Args:
+            data (dict): Dictionary containing:
+                - game_id (int): The ID of the game to add the prop to
+                - question (str): The prop question text
+                - is_mandatory (bool, optional): Whether this prop is mandatory
+                - options (list): List of option dicts with:
+                    - player_name (str): Name of the player
+                    - td_line (float): TD threshold (0.5 = 1+, 1.5 = 2+, etc.)
+                    - points (int): Points awarded if player hits their line
+                Example: [
+                    {"player_name": "Travis Kelce", "td_line": 0.5, "points": 5},
+                    {"player_name": "Patrick Mahomes", "td_line": 1.5, "points": 12}
+                ]
+
+        Returns:
+            dict: Success message with the newly created prop's ID
+
+        Raises:
+            400: If validation fails for game_id
+            404: If the game doesn't exist
+        """
+        game_id = validate_game_id(data.get('game_id'))
+        game = get_game_by_id(game_id)
+        validate_game_exists(game)
+
+        new_prop = AnytimeTdProp(
+            game_id=game_id,
+            question=data.get('question'),
+            is_mandatory=data.get('is_mandatory', False)
+        )
+
+        new_prop.options = []
+        game.anytime_td_props.append(new_prop)
+
+        # Create player options with their individual TD lines and points
+        options = data.get('options', [])
+        for option in options:
+            new_option = AnytimeTdOption(
+                player_name=option.get('player_name'),
+                td_line=option.get('td_line', 0.5),
+                points=option.get('points'),
+                current_tds=0
+            )
+            db.session.add(new_option)
+            new_prop.options.append(new_option)
+
+        db.session.add(new_prop)
+        db.session.commit()
+
+        return {"message": "Anytime TD prop added successfully.", "prop_id": new_prop.id}
+
+    @staticmethod
     def delete_prop(data):
         """
         Delete a specific prop from a game.
 
-        Removes the prop and all associated player answers. Works for all three
-        prop types: Winner/Loser, Over/Under, and Variable Option.
+        Removes the prop and all associated player answers. Works for all four
+        prop types: Winner/Loser, Over/Under, Variable Option, and Anytime TD.
 
         Args:
             data (dict): Dictionary containing:
                 - prop_id (int): The ID of the prop to delete
-                - prop_type (str): Type of prop - "winner_loser", "over_under", or "variable_option"
+                - prop_type (str): Type of prop - "winner_loser", "over_under",
+                                   "variable_option", or "anytime_td"
 
         Returns:
             dict: Success message
@@ -717,8 +927,23 @@ class GameService:
                 db.session.delete(option)
 
             db.session.delete(prop)
+
+        elif prop_type == 'anytime_td':
+            prop = get_anytime_td_prop_by_id(prop_id)
+            if not prop:
+                abort(404, "Anytime TD prop not found")
+
+            # Delete all associated answers
+            AnytimeTdAnswer.query.filter_by(prop_id=prop_id).delete()
+
+            # Delete all associated player options (cascade should handle this, but being explicit)
+            for option in prop.options:
+                db.session.delete(option)
+
+            db.session.delete(prop)
+
         else:
-            abort(400, "Invalid prop_type. Must be 'winner_loser', 'over_under', or 'variable_option'")
+            abort(400, "Invalid prop_type. Must be 'winner_loser', 'over_under', 'variable_option', or 'anytime_td'")
 
         db.session.commit()
 

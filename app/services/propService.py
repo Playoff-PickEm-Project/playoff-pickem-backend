@@ -129,6 +129,45 @@ class PropService:
         return variable_option_answers
 
     @staticmethod
+    def retrieve_anytime_td_answers(leaguename, username):
+        """
+        Retrieve a player's anytime TD answers for all props they've answered.
+
+        Gets all anytime TD prop answers for a specific player in a league.
+
+        Args:
+            leaguename (str): The name of the league.
+            username (str): The username of the player.
+
+        Returns:
+            dict: A dictionary mapping prop_id to the player's selected player name.
+
+        Raises:
+            400: If validation fails for leaguename or username.
+            404: If the league or player doesn't exist.
+        """
+        leaguename = validate_league_name(leaguename)
+        username = validate_username(username)
+
+        league = get_league_by_name(leaguename)
+        validate_league_exists(league)
+
+        player = get_player_by_username_and_leaguename(username, leaguename)
+        validate_player_exists(player)
+
+        anytime_td_answers = {}
+
+        # Player model needs to have player_anytime_td_answers relationship
+        # For now, query directly
+        from app.models.propAnswers.anytimeTdAnswer import AnytimeTdAnswer
+        answers = AnytimeTdAnswer.query.filter_by(player_id=player.id).all()
+
+        for answer in answers:
+            anytime_td_answers[answer.prop_id] = answer.answer
+
+        return anytime_td_answers
+
+    @staticmethod
     def get_saved_correct_answers(game_id):
         """
         Retrieve all saved correct answers for a game.

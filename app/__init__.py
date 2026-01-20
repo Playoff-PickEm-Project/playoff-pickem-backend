@@ -40,6 +40,10 @@ def create_app():
     from app.models.props.hashMapAnswers import HashMapAnswers
     from app.models.propAnswers.variableOptionAnswer import VariableOptionAnswer
     from app.models.playerPropSelection import PlayerPropSelection
+    # Anytime TD Scorer prop models
+    from app.models.props.anytimeTdProp import AnytimeTdProp
+    from app.models.props.anytimeTdOption import AnytimeTdOption
+    from app.models.propAnswers.anytimeTdAnswer import AnytimeTdAnswer
     # from app.models.allModels import User, League, Player
     
     # Initialize the app with SQLAlchemy and Migrate

@@ -9,6 +9,8 @@ from app.repositories.propRepository import (
     get_winner_loser_prop_by_id,
     get_over_under_prop_by_id,
     get_variable_option_prop_by_id,
+    get_anytime_td_prop_by_id,
+    get_anytime_td_answers_for_prop,
     get_player_prop_selections_for_game
 )
 from app.repositories.playerRepository import get_player_by_id
@@ -34,7 +36,7 @@ class GradeGameService:
         Args:
             player_id (int): The player's ID
             game_id (int): The game's ID
-            prop_type (str): Type of prop ("winner_loser", "over_under", or "variable_option")
+            prop_type (str): Type of prop ("winner_loser", "over_under", "variable_option", or "anytime_td")
             prop_id (int): The prop's ID
 
         Returns:
@@ -84,6 +86,21 @@ class GradeGameService:
                     prop.correct_answer = prop.team_b_name
                 # If scores are equal, it's a tie - leave correct_answer as None
                 print(f"Auto-graded W/L prop {prop.id}: {prop.correct_answer} (score: {prop.team_a_score}-{prop.team_b_score})")
+
+        # Auto-grade Anytime TD props
+        for prop in game.anytime_td_props:
+            # Collect all players who hit their TD lines
+            correct_players = []
+            for option in prop.options:
+                # Check if this player scored enough TDs to hit their line
+                if option.has_hit_line():
+                    correct_players.append(option.player_name)
+                    print(f"Auto-graded Anytime TD prop {prop.id}: {option.player_name} hit line (TDs: {option.current_tds}, line: {option.td_line})")
+
+            # Set correct_answer as JSON array of player names who hit their lines
+            if correct_players:
+                prop.correct_answer = correct_players
+                print(f"Auto-graded Anytime TD prop {prop.id}: correct_answer = {correct_players}")
 
         db.session.commit()
 
@@ -176,6 +193,31 @@ class GradeGameService:
 
                         print(points_to_add)
                         player.points += points_to_add
+
+        # Grade Anytime TD props
+        for prop in game.anytime_td_props:
+            answers = get_anytime_td_answers_for_prop(prop.id)
+
+            for answer in answers:
+                player = get_player_by_id(answer.player_id)
+
+                # For optional props, check if player selected this prop
+                if not prop.is_mandatory:
+                    if not GradeGameService._has_player_selected_prop(player.id, game.id, "anytime_td", prop.id):
+                        continue  # Skip grading if player didn't select this optional prop
+
+                # Check if the player's selected player is in the correct_answer array
+                # correct_answer is a JSON array of player names who hit their TD lines
+                if player is not None and prop.correct_answer and answer.answer in prop.correct_answer:
+                    # Find the corresponding option to get the points
+                    points_to_add = 0
+                    for option in prop.options:
+                        if option.player_name == answer.answer:
+                            points_to_add = option.points
+                            break
+
+                    print(f"Anytime TD: Awarding {points_to_add} points to {player.name} for selecting {answer.answer}")
+                    player.points += points_to_add
 
         game.graded = 1
 
@@ -351,3 +393,62 @@ class GradeGameService:
         p.correct_answer = ans
         db.session.commit()
         print("prop answer: ", p.correct_answer)
+
+    @staticmethod
+    def set_correct_anytime_td_prop(leaguename, prop_id, ans):
+        """
+        Set the correct answer for an anytime TD prop and handle regrading.
+
+        The correct answer should be an array of player names who hit their TD lines.
+        If the game has already been graded, deducts points from players who got
+        the old correct answer before updating to the new correct answer.
+
+        Args:
+            leaguename (str): The name of the league (for validation context).
+            prop_id (int): The unique identifier of the anytime TD prop.
+            ans (list): A list of player names who hit their TD lines.
+                       Example: ["Travis Kelce", "Patrick Mahomes"]
+
+        Returns:
+            None
+
+        Raises:
+            400: If validation fails for leaguename or prop_id.
+            404: If the prop or game doesn't exist.
+        """
+        leaguename = validate_league_name(leaguename)
+        prop_id = validate_prop_id(prop_id)
+        # ans is a list for anytime TD props, don't validate as single answer
+
+        p = get_anytime_td_prop_by_id(prop_id)
+        validate_prop_exists(p)
+        print(prop_id)
+
+        game = Game.query.filter_by(id=p.game_id).first()
+        validate_game_exists(game)
+
+        # If game already graded, deduct points for OLD correct answer before updating
+        if game.graded != 0:
+            # Only get answers for THIS specific prop
+            answers = get_anytime_td_answers_for_prop(prop_id)
+            old_correct_answers = p.correct_answer if p.correct_answer else []  # Get OLD correct answers before updating
+
+            for answer in answers:
+                player = get_player_by_id(answer.player_id)
+
+                # If player's answer matched the OLD correct answer, deduct those points
+                if player is not None and answer.answer in old_correct_answers:
+                    # Find the corresponding option to get the points to deduct
+                    points_to_reduce = 0
+                    for opt in p.options:
+                        if opt.player_name == answer.answer:
+                            points_to_reduce = opt.points
+                            break
+
+                    player.points -= points_to_reduce
+                    print(f"Deducted {points_to_reduce} points from player {player.name}")
+
+        # Update to NEW correct answer
+        print(ans)
+        p.correct_answer = ans
+        db.session.commit()

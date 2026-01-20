@@ -63,6 +63,7 @@ tests/              # Unit and integration tests
 - [Create Winner/Loser Props](./prop-winner-loser.md) - Team selection props
 - [Create Over/Under Props](./prop-over-under.md) - Statistical threshold props
 - [Create Variable Option Props](./prop-variable-option.md) - Multiple choice props
+- [Create Anytime TD Props](./prop-anytime-td.md) - Player touchdown scorer props
 - [Add Prop to Existing Game](./prop-add-to-game.md) - Adding props after game creation
 - [Delete Props](./prop-delete.md) - Removing props from a game
 - [Edit Props](./prop-edit.md) - Modifying existing props
@@ -132,6 +133,7 @@ Most endpoints require authentication via session cookies:
 - **WinnerLoserProp**: Team selection prop
 - **OverUnderProp**: Statistical threshold prop
 - **VariableOptionProp**: Multiple choice prop
+- **AnytimeTdProp**: Player touchdown scorer prop
 - **PlayerPropSelection**: Tracks which props a player selected
 - **[Type]Answer**: Player's answer to a prop
 

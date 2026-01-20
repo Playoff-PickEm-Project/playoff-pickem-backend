@@ -69,6 +69,25 @@ def retrieveVariableOptionAnswers():
 
     return jsonify(result)
 
+@propController.route("/retrieve_anytime_td_answers", methods=['GET'])
+def retrieveAnytimeTdAnswers():
+    """
+    Retrieve a player's anytime TD prop answers.
+
+    Query Parameters:
+        - leagueName (str): The name of the league
+        - username (str): The username of the player
+
+    Returns:
+        JSON: Dictionary mapping prop_id to player's selected player name
+    """
+    leaguename = request.args.get('leagueName')
+    username = request.args.get('username')
+
+    result = PropService.retrieve_anytime_td_answers(leaguename, username)
+
+    return jsonify(result)
+
 @propController.route("/set_correct_winner_loser_prop", methods=['POST'])
 def setCorrectWinnerLoserProp():
     """

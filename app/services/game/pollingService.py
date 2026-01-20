@@ -12,6 +12,7 @@ from app import db
 from app.models.gameModel import Game
 from app.models.props.overUnderProp import OverUnderProp
 from app.models.props.winnerLoserProp import WinnerLoserProp
+from app.models.props.anytimeTdProp import AnytimeTdProp
 from app.services.espnClientService import ESPNClientService
 from app.services.game.gradeGameService import GradeGameService
 
@@ -114,6 +115,9 @@ class PollingService:
         # Update Winner/Loser props
         PollingService._update_winner_loser_props(game, game_data, scores)
 
+        # Update Anytime TD props
+        PollingService._update_anytime_td_props(game, game_data)
+
         # Check if game is completed
         if ESPNClientService.is_game_completed(game_data):
             print(f"Game {game.id} ({game.game_name}) has completed. Triggering auto-grading...")
@@ -187,6 +191,35 @@ class PollingService:
                 if winning_team_id:
                     prop.winning_team_id = winning_team_id
                     print(f"Set winning team for prop {prop.id}: {winning_team_id}")
+
+    @staticmethod
+    def _update_anytime_td_props(game: Game, game_data: dict) -> None:
+        """
+        Update current_tds for all player options in Anytime TD props.
+
+        This method fetches TD stats for each player option in all anytime TD props
+        for the game, and updates the current_tds field accordingly.
+
+        Args:
+            game (Game): The game object.
+            game_data (dict): Live game data from ESPN.
+        """
+        for prop in game.anytime_td_props:
+            for option in prop.options:
+                if not option.player_name:
+                    continue  # Skip options without player name
+
+                # Fetch TD stats for this player
+                # stat_type for touchdowns is "touchdowns"
+                current_tds = ESPNClientService.get_player_stats(
+                    game_data,
+                    option.player_name,
+                    "touchdowns"
+                )
+
+                if current_tds is not None:
+                    option.current_tds = int(current_tds)
+                    print(f"Updated {option.player_name} touchdowns: {current_tds}")
 
     @staticmethod
     def poll_all_active_games() -> dict:
