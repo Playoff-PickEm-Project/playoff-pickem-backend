@@ -171,6 +171,7 @@ GET http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard
 
 | stat_type | ESPN API Path | Description |
 |-----------|---------------|-------------|
+| **total_points** | **competitions[].competitors[].score** | **Total points scored by both teams** |
 | passing_yards | statistics[].stats[0] | Passing yards |
 | passing_tds | statistics[].stats[1] | Passing touchdowns |
 | passing_interceptions | statistics[].stats[2] | Interceptions thrown |
@@ -222,6 +223,12 @@ GET http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard
 - Helper functions for each stat type
 - Parses ESPN's nested statistics structure
 - Handles missing data gracefully
+
+**Special Case - Total Points**:
+- When `stat_type = "total_points"`, the prop tracks game-wide statistics (not player-specific)
+- No `player_id` required
+- `current_value` is calculated as the sum of both teams' scores
+- Updated in `_update_over_under_props()` method in `pollingService.py`
 
 ---
 

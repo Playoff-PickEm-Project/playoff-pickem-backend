@@ -482,6 +482,7 @@ const createGame = async () => {
 - `is_mandatory`: If true, all players must answer this prop
 
 **Stat Types**:
+- `total_points` (total points scored by both teams - game-wide stat, no player required)
 - `passing_yards`
 - `passing_tds`
 - `passing_interceptions`
@@ -491,6 +492,8 @@ const createGame = async () => {
 - `receiving_tds`
 - `receiving_receptions`
 - `scrimmage_yards` (rushing + receiving)
+
+**Note**: For `total_points` stat type, `playerName` and `playerId` are not required as it tracks game-wide statistics.
 
 **Default**: Over/Under props default to `is_mandatory=False`
 

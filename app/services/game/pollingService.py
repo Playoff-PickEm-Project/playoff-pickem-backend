@@ -143,11 +143,24 @@ class PollingService:
         """
         Update current_value for all Over/Under props associated with a game.
 
+        Handles both player-specific stats and game-wide stats like total points.
+
         Args:
             game (Game): The game object.
             game_data (dict): Live game data from ESPN.
         """
         for prop in game.over_under_props:
+            # Handle total points prop (game-wide stat)
+            if prop.stat_type == "total_points":
+                # Calculate total points from both teams
+                scores = ESPNClientService.get_team_scores(game_data)
+                if scores:
+                    total_points = sum(scores.values())
+                    prop.current_value = total_points
+                    print(f"Updated total points: {total_points}")
+                continue
+
+            # Handle player-specific stats
             if not prop.player_name or not prop.stat_type:
                 continue  # Skip props without player/stat info
 
