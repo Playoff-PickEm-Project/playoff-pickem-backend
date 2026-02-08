@@ -88,6 +88,39 @@ def answerVariableOptionProp():
 
     return jsonify(result)
 
+@gameController.route('/answer_anytime_td_prop', methods=['POST'])
+def answerAnytimeTdProp():
+    """
+    Save or update a player's answer for an anytime TD prop.
+
+    Expects JSON body with:
+        - leagueName (str): The name of the league
+        - username (str): The username of the player
+        - prop_id (int): The ID of the anytime TD prop
+        - answer (str): The player name selected (e.g., "Travis Kelce")
+
+    Returns:
+        JSON: Success message
+
+    Example request body:
+        {
+            "leagueName": "My League",
+            "username": "john@example.com",
+            "prop_id": 5,
+            "answer": "Travis Kelce"
+        }
+    """
+    data = request.get_json()
+
+    leagueName = data.get('leagueName')
+    username = data.get('username')
+    prop_id = data.get('prop_id')
+    answer = data.get('answer')
+
+    result = GameService.answer_anytime_td_prop(leagueName, username, prop_id, answer)
+
+    return jsonify(result)
+
 @gameController.route('/answer_game', methods=['POST'])
 def answerGame():
     """

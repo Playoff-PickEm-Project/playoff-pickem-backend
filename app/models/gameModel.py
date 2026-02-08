@@ -5,6 +5,7 @@ from app import db
 from app.models.props.overUnderProp import OverUnderProp
 from app.models.props.variableOptionProp import VariableOptionProp
 from app.models.props.winnerLoserProp import WinnerLoserProp
+from app.models.props.anytimeTdProp import AnytimeTdProp
 
 class Game(db.Model):
   	# This is the id for the league. Defined as an integer, and primary_key being true represents that each instance is unique.
@@ -28,12 +29,15 @@ class Game(db.Model):
     # Note: To pass from frontend, use Date object and .toISOString
     start_time = db.Column(db.DateTime, nullable=False)
     
-    # Each league has an array of all the types of prop questions. For now, will only support winner/loser, over/under, and 
-    # props with an unknown number of options.
+    # Each league has an array of all the types of prop questions. For now, will only support winner/loser, over/under,
+    # props with an unknown number of options, and anytime TD scorer props.
     # Note: This can be cleaned up. Winner loser, over under could fall into variable option. Something to look into in the future.
     winner_loser_props = db.relationship('WinnerLoserProp', foreign_keys=[WinnerLoserProp.game_id])
     over_under_props = db.relationship('OverUnderProp', foreign_keys=[OverUnderProp.game_id])
     variable_option_props = db.relationship('VariableOptionProp', foreign_keys=[VariableOptionProp.game_id])
+
+    # Anytime TD scorer props - auto-gradable props where users select a player to score TDs
+    anytime_td_props = db.relationship('AnytimeTdProp', foreign_keys=[AnytimeTdProp.game_id])
     
     # Field intended to check if the game is graded or not. 0 represents not graded, non-zero represents graded.
     graded = db.Column(db.Integer)
@@ -70,4 +74,5 @@ class Game(db.Model):
             'winner_loser_props': [prop.to_dict() for prop in self.winner_loser_props],
             'over_under_props': [prop.to_dict() for prop in self.over_under_props],
             'variable_option_props': [prop.to_dict() for prop in self.variable_option_props],
+            'anytime_td_props': [prop.to_dict() for prop in self.anytime_td_props],
         }
