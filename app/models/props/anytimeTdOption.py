@@ -24,7 +24,7 @@ class AnytimeTdOption(db.Model):
         id (int): Unique identifier for the option
         player_name (str): Name of the player (e.g., "Travis Kelce")
         td_line (float): TD threshold for this player (e.g., 0.5 for 1+, 1.5 for 2+)
-        points (int): Points awarded if player scores >= td_line touchdowns
+        points (float): Points awarded if player scores >= td_line touchdowns
         current_tds (int): Live count of TDs scored by this player (updated by polling)
         anytime_td_prop_id (int): Foreign key to parent AnytimeTdProp
 
@@ -45,7 +45,7 @@ class AnytimeTdOption(db.Model):
     td_line = db.Column(db.Float, nullable=False, default=0.5)
 
     # Points awarded if this player hits their TD line
-    points = db.Column(db.Integer, nullable=False)
+    points = db.Column(db.Float, nullable=False)
 
     # Current number of TDs scored by this player (updated from live stats)
     current_tds = db.Column(db.Integer, nullable=True, default=0)
